@@ -1,0 +1,616 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZenTao MCP Tools Schema (V1.1)",
+  "type": "object",
+  "properties": {
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "inputSchema", "outputSchema"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "inputSchema": { "type": "object" },
+          "outputSchema": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["tools"],
+  "additionalProperties": false,
+  "$defs": {
+    "paginationInput": {
+      "type": "object",
+      "properties": {
+        "page": { "type": "integer", "minimum": 1, "default": 1 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+      }
+    },
+    "sortOrderInput": {
+      "type": "object",
+      "properties": {
+        "sortOrder": { "type": "string", "enum": ["asc", "desc"], "default": "asc" }
+      }
+    },
+    "scopeInput": {
+      "type": "object",
+      "properties": {
+        "scope": { "type": "string" },
+        "scopeId": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["scope", "scopeId"]
+    },
+    "errorCode": {
+      "type": "string",
+      "enum": ["AUTH_FAILED", "PERMISSION_DENIED", "INVALID_ARGUMENT", "UPSTREAM_TIMEOUT", "UPSTREAM_ERROR"]
+    },
+    "standardError": {
+      "type": "object",
+      "properties": {
+        "code": { "$ref": "#/$defs/errorCode" },
+        "message": { "type": "string" },
+        "details": { "type": "object" }
+      },
+      "required": ["code", "message"],
+      "additionalProperties": true
+    },
+    "standardResultBase": {
+      "type": "object",
+      "required": ["ok", "data", "meta"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "requestId": { "type": "string" },
+            "page": { "type": "integer" },
+            "limit": { "type": "integer" },
+            "total": { "type": "integer" }
+          },
+          "required": ["requestId"],
+          "additionalProperties": true
+        },
+        "error": {
+          "oneOf": [
+            { "$ref": "#/$defs/standardError" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "standardProject": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "status": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "owner": { "type": "string" }
+      },
+      "required": ["id", "name"],
+      "additionalProperties": true
+    },
+    "standardExecution": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "status": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "projectId": { "type": "integer" },
+        "owner": { "type": "string" }
+      },
+      "required": ["id", "name"],
+      "additionalProperties": true
+    },
+    "standardStory": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "stage": { "type": "string" },
+        "priority": { "type": "string" },
+        "openedBy": { "type": "string" },
+        "assignedTo": { "type": "string" }
+      },
+      "required": ["id", "title"],
+      "additionalProperties": true
+    },
+    "standardTask": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "deadline": { "type": "string" },
+        "estimateHours": { "type": "number" },
+        "consumedHours": { "type": "number" }
+      },
+      "required": ["id", "title"],
+      "additionalProperties": true
+    },
+    "standardBug": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "severity": { "type": "string" },
+        "priority": { "type": "string" },
+        "openedBy": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "resolvedBy": { "type": "string" }
+      },
+      "required": ["id", "title"],
+      "additionalProperties": true
+    },
+    "projectListPayload": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/standardProject" }
+        },
+        "total": { "type": "integer" },
+        "filteredTotal": { "type": "integer" },
+        "raw": {}
+      },
+      "required": ["items", "total", "filteredTotal", "raw"],
+      "additionalProperties": false
+    },
+    "executionListPayload": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/standardExecution" }
+        },
+        "total": { "type": "integer" },
+        "filteredTotal": { "type": "integer" },
+        "raw": {}
+      },
+      "required": ["items", "total", "filteredTotal", "raw"],
+      "additionalProperties": false
+    },
+    "storyListPayload": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/standardStory" }
+        },
+        "total": { "type": "integer" },
+        "filteredTotal": { "type": "integer" },
+        "raw": {}
+      },
+      "required": ["items", "total", "filteredTotal", "raw"],
+      "additionalProperties": false
+    },
+    "taskListPayload": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/standardTask" }
+        },
+        "total": { "type": "integer" },
+        "filteredTotal": { "type": "integer" },
+        "raw": {}
+      },
+      "required": ["items", "total", "filteredTotal", "raw"],
+      "additionalProperties": false
+    },
+    "bugListPayload": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/standardBug" }
+        },
+        "total": { "type": "integer" },
+        "filteredTotal": { "type": "integer" },
+        "raw": {}
+      },
+      "required": ["items", "total", "filteredTotal", "raw"],
+      "additionalProperties": false
+    },
+    "projectDetailPayload": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "oneOf": [
+            { "$ref": "#/$defs/standardProject" },
+            { "type": "null" }
+          ]
+        },
+        "raw": {}
+      },
+      "required": ["item", "raw"],
+      "additionalProperties": false
+    },
+    "storyDetailPayload": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "oneOf": [
+            { "$ref": "#/$defs/standardStory" },
+            { "type": "null" }
+          ]
+        },
+        "raw": {}
+      },
+      "required": ["item", "raw"],
+      "additionalProperties": false
+    },
+    "taskDetailPayload": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "oneOf": [
+            { "$ref": "#/$defs/standardTask" },
+            { "type": "null" }
+          ]
+        },
+        "raw": {}
+      },
+      "required": ["item", "raw"],
+      "additionalProperties": false
+    },
+    "bugDetailPayload": {
+      "type": "object",
+      "properties": {
+        "item": {
+          "oneOf": [
+            { "$ref": "#/$defs/standardBug" },
+            { "type": "null" }
+          ]
+        },
+        "raw": {}
+      },
+      "required": ["item", "raw"],
+      "additionalProperties": false
+    },
+    "healthPayload": {
+      "type": "object",
+      "properties": {
+        "baseUrl": { "type": "string" },
+        "authenticated": { "type": "boolean" },
+        "checkedAt": { "type": "string" }
+      },
+      "required": ["baseUrl", "authenticated", "checkedAt"],
+      "additionalProperties": true
+    },
+    "healthResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/healthPayload" }
+          }
+        }
+      ]
+    },
+    "projectListResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/projectListPayload" }
+          }
+        }
+      ]
+    },
+    "projectDetailResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/projectDetailPayload" }
+          }
+        }
+      ]
+    },
+    "executionListResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/executionListPayload" }
+          }
+        }
+      ]
+    },
+    "storyListResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/storyListPayload" }
+          }
+        }
+      ]
+    },
+    "storyDetailResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/storyDetailPayload" }
+          }
+        }
+      ]
+    },
+    "taskListResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/taskListPayload" }
+          }
+        }
+      ]
+    },
+    "taskDetailResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/taskDetailPayload" }
+          }
+        }
+      ]
+    },
+    "bugListResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/bugListPayload" }
+          }
+        }
+      ]
+    },
+    "bugDetailResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/bugDetailPayload" }
+          }
+        }
+      ]
+    }
+  },
+  "x-toolSpecifications": [
+    {
+      "name": "zentao_health_check",
+      "description": "检查禅道连通性、认证和版本信息",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "verifyAuth": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/healthResult" }
+    },
+    {
+      "name": "zentao_list_projects",
+      "description": "查询项目列表（支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": ["id", "name", "status", "startDate", "endDate", "owner"]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": { "$ref": "#/$defs/projectListResult" }
+    },
+    {
+      "name": "zentao_get_project",
+      "description": "按项目 ID 获取项目详情",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["projectId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/projectDetailResult" }
+    },
+    {
+      "name": "zentao_list_executions",
+      "description": "按项目查询执行列表（支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "integer", "minimum": 1 },
+              "status": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": ["id", "name", "status", "startDate", "endDate", "projectId", "owner"]
+              }
+            },
+            "required": ["projectId"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": { "$ref": "#/$defs/executionListResult" }
+    },
+    {
+      "name": "zentao_list_stories",
+      "description": "查询需求列表（按产品或项目，支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/scopeInput" },
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "scope": { "type": "string", "enum": ["product", "project"] },
+              "status": { "type": "string" },
+              "assignedTo": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": ["id", "title", "status", "stage", "priority", "assignedTo"]
+              }
+            },
+            "required": ["scope", "scopeId"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": { "$ref": "#/$defs/storyListResult" }
+    },
+    {
+      "name": "zentao_get_story",
+      "description": "按需求 ID 获取需求详情",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "storyId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["storyId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/storyDetailResult" }
+    },
+    {
+      "name": "zentao_list_tasks",
+      "description": "查询任务列表（按执行或项目，支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/scopeInput" },
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "scope": { "type": "string", "enum": ["execution", "project"] },
+              "status": { "type": "string" },
+              "assignedTo": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": [
+                  "id",
+                  "title",
+                  "status",
+                  "priority",
+                  "assignedTo",
+                  "deadline",
+                  "estimateHours",
+                  "consumedHours"
+                ]
+              }
+            },
+            "required": ["scope", "scopeId"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": { "$ref": "#/$defs/taskListResult" }
+    },
+    {
+      "name": "zentao_get_task",
+      "description": "按任务 ID 获取任务详情",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["taskId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_list_bugs",
+      "description": "查询 Bug 列表（按产品或项目，支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/scopeInput" },
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "scope": { "type": "string", "enum": ["product", "project"] },
+              "status": { "type": "string" },
+              "severity": { "type": "string" },
+              "assignedTo": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": [
+                  "id",
+                  "title",
+                  "status",
+                  "severity",
+                  "priority",
+                  "assignedTo",
+                  "openedBy",
+                  "resolvedBy"
+                ]
+              }
+            },
+            "required": ["scope", "scopeId"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": { "$ref": "#/$defs/bugListResult" }
+    },
+    {
+      "name": "zentao_get_bug",
+      "description": "按 Bug ID 获取 Bug 详情",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["bugId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/bugDetailResult" }
+    }
+  ]
+}
