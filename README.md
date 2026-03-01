@@ -5,9 +5,40 @@ ZenTao 18.13 的只读 MCP 服务（TypeScript）。
 ## 已发布 npm
 - 包名：`zentao-mcp`
 - 使用 MCP 时不需要先 `npm install` 或手动 `npm start`
-- 推荐直接在 Codex CLI 的 MCP 配置中通过 `npx` 启动
+- 推荐直接在各大 AI 客户端的 MCP 配置中通过 `npx` 启动
 
-## Codex CLI 直接可用（推荐）
+## 支持主流 AI 客户端（直接可用）
+
+### 1. Claude Desktop / Cursor / Windsurf
+在客户端对应的 MCP 配置文件（如 `mcp.json` 或 `cline_mcp_settings.json`）中添加：
+
+```json
+{
+  "mcpServers": {
+    "zentao": {
+      "command": "npx",
+      "args": ["-y", "zentao-mcp"],
+      "env": {
+        "ZENTAO_BASE_URL": "https://zentao.example.com/",
+        "ZENTAO_ACCOUNT": "your_account",
+        "ZENTAO_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+### 2. Gemini CLI
+在 Gemini CLI 的 MCP 配置文件中（如 `~/.gemini/mcp.json`）添加上述同样的 JSON 结构。
+
+### 3. Claude Code
+运行以下命令直接在当前项目绑定：
+```bash
+claude mcp add zentao -- npx -y zentao-mcp
+```
+*(注意：Claude Code 支持通过配置环境变量文件来加载凭据)*
+
+### 4. Codex CLI
 在 `~/.codex/config.toml` 增加：
 
 ```toml
@@ -23,7 +54,7 @@ startup_timeout_sec = 60.0
 tool_timeout_sec = 60.0
 ```
 
-重启 Codex CLI 后即可直接自然语言调用禅道工具。
+重启各客户端后即可直接通过自然语言调用禅道工具。
 
 ## 多用户账号方式
 - 每个使用者只需在自己的 MCP 配置中填写自己的禅道账号密码
