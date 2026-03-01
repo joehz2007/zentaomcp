@@ -126,11 +126,10 @@ test/
 - `ZENTAO_ACCOUNT`：账号
 - `ZENTAO_PASSWORD`：密码
 - `ZENTAO_TIMEOUT_MS`：请求超时（默认 10000）
-- `ZENTAO_RETRY_MAX`：重试次数（默认 1，仅网络错误和鉴权刷新后）
+- `ZENTAO_TOKEN_TTL_MS`：Token 缓存 TTL（默认 3000000）
 - `MCP_DEFAULT_PAGE`：默认页码（默认 1）
 - `MCP_DEFAULT_LIMIT`：默认每页（默认 20）
 - `MCP_MAX_LIMIT`：最大每页（默认 100）
-- `LOG_LEVEL`：日志级别
 
 ## 8. 安全设计
 - 不在日志输出明文密码、Token、完整 Cookie。

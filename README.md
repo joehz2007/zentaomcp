@@ -1,6 +1,6 @@
 # zentao-mcp
 
-ZenTao 18.13 的只读 MCP 服务骨架（TypeScript）。
+ZenTao 18.13 的只读 MCP 服务（TypeScript）。
 
 ## 已发布 npm
 - 包名：`zentao-mcp`
@@ -72,5 +72,6 @@ tool_timeout_sec = 60.0
 6. 启动（stdio）：`npm start`
 
 ## 说明
-- 当前是首版骨架，4 类核心对象已包含字段标准化映射，并保留 `raw` 原始响应。
+- 当前版本已实现 10 个只读工具，覆盖项目/执行/需求/任务/Bug 的列表与详情查询。
+- 返回结果包含标准化字段映射，并保留 `raw` 原始响应用于排障。
 - 测试覆盖了参数校验、scope 路由和错误码映射等关键路径。

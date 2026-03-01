@@ -19,7 +19,7 @@ export function createProjectTools(context: ToolContext): ToolDefinition[] {
 function createListProjectsTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_list_projects",
-    description: "查询项目列表（占位版，支持分页和基础过滤）",
+    description: "查询项目列表（支持分页、过滤、排序）",
     inputSchema: {
       type: "object",
       properties: {
@@ -90,7 +90,7 @@ function createListProjectsTool(context: ToolContext): ToolDefinition {
 function createGetProjectTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_project",
-    description: "按项目 ID 获取项目详情（占位版）",
+    description: "按项目 ID 获取项目详情",
     inputSchema: {
       type: "object",
       properties: {

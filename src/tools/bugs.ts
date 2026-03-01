@@ -20,7 +20,7 @@ export function createBugTools(context: ToolContext): ToolDefinition[] {
 function createListBugsTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_list_bugs",
-    description: "查询 Bug 列表（scope=product|project，占位版）",
+    description: "查询 Bug 列表（scope=product|project，支持分页、过滤、排序）",
     inputSchema: {
       type: "object",
       properties: {
@@ -106,7 +106,7 @@ function createListBugsTool(context: ToolContext): ToolDefinition {
 function createGetBugTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_bug",
-    description: "按 Bug ID 获取 Bug 详情（占位版）",
+    description: "按 Bug ID 获取 Bug 详情",
     inputSchema: {
       type: "object",
       properties: {

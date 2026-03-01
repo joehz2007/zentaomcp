@@ -20,7 +20,7 @@ export function createTaskTools(context: ToolContext): ToolDefinition[] {
 function createListTasksTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_list_tasks",
-    description: "查询任务列表（scope=execution|project，占位版）",
+    description: "查询任务列表（scope=execution|project，支持分页、过滤、排序）",
     inputSchema: {
       type: "object",
       properties: {
@@ -127,7 +127,7 @@ function createListTasksTool(context: ToolContext): ToolDefinition {
 function createGetTaskTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_task",
-    description: "按任务 ID 获取任务详情（占位版）",
+    description: "按任务 ID 获取任务详情",
     inputSchema: {
       type: "object",
       properties: {

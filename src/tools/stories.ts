@@ -20,7 +20,7 @@ export function createStoryTools(context: ToolContext): ToolDefinition[] {
 function createListStoriesTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_list_stories",
-    description: "查询需求列表（scope=product|project，占位版）",
+    description: "查询需求列表（scope=product|project，支持分页、过滤、排序）",
     inputSchema: {
       type: "object",
       properties: {
@@ -99,7 +99,7 @@ function createListStoriesTool(context: ToolContext): ToolDefinition {
 function createGetStoryTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_story",
-    description: "按需求 ID 获取需求详情（占位版）",
+    description: "按需求 ID 获取需求详情",
     inputSchema: {
       type: "object",
       properties: {
