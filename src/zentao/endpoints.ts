@@ -8,10 +8,21 @@ export const ENDPOINTS = {
   executionsByProject: (projectId: number) => `/api.php/v1/projects/${projectId}/executions`,
   tasksByExecution: (executionId: number) => `/api.php/v1/executions/${executionId}/tasks`,
   tasksByProject: (projectId: number) => `/api.php/v1/projects/${projectId}/tasks`,
+  createTaskByExecution: (executionId: number) => `/api.php/v1/executions/${executionId}/tasks`,
   taskById: (taskId: number) => `/api.php/v1/tasks/${taskId}`,
+  startTaskById: (taskId: number) => `/api.php/v1/tasks/${taskId}/start`,
+  pauseTaskById: (taskId: number) => `/api.php/v1/tasks/${taskId}/pause`,
+  restartTaskById: (taskId: number) => `/api.php/v1/tasks/${taskId}/restart`,
+  finishTaskById: (taskId: number) => `/api.php/v1/tasks/${taskId}/finish`,
+  closeTaskById: (taskId: number) => `/api.php/v1/tasks/${taskId}/close`,
   bugsByProduct: (productId: number) => `/api.php/v1/products/${productId}/bugs`,
   bugsByProject: (projectId: number) => `/api.php/v1/projects/${projectId}/bugs`,
+  createBugByProduct: (productId: number) => `/api.php/v1/products/${productId}/bugs`,
   bugById: (bugId: number) => `/api.php/v1/bugs/${bugId}`,
+  confirmBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/confirm`,
+  closeBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/close`,
+  activateBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/active`,
+  resolveBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/resolve`,
 };
 
 export function withQuery(

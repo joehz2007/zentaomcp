@@ -25,13 +25,21 @@ export class ToolRegistry {
   private readonly tools = new Map<string, ToolDefinition>();
 
   constructor(context: ToolContext) {
+    const readOnlyTaskTools = new Set(["zentao_list_tasks", "zentao_get_task"]);
+    const readOnlyBugTools = new Set(["zentao_list_bugs", "zentao_get_bug"]);
+    const taskTools = createTaskTools(context).filter(
+      (tool) => context.config.enableWriteTools || readOnlyTaskTools.has(tool.name),
+    );
+    const bugTools = createBugTools(context).filter(
+      (tool) => context.config.enableWriteTools || readOnlyBugTools.has(tool.name),
+    );
     const definitions = [
       createHealthCheckTool(context),
       ...createProjectTools(context),
       ...createExecutionTools(context),
       ...createStoryTools(context),
-      ...createTaskTools(context),
-      ...createBugTools(context),
+      ...taskTools,
+      ...bugTools,
     ];
 
     for (const tool of definitions) {

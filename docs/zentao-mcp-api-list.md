@@ -17,8 +17,20 @@
 | `zentao_get_story` | `/stories/{storyId}` | `GET` | `storyId` | 获取需求详情 |
 | `zentao_list_tasks` | `/executions/{scopeId}/tasks` 或 `/projects/{scopeId}/tasks` | `GET` | `scope,scopeId` | `scope in [execution,project]` |
 | `zentao_get_task` | `/tasks/{taskId}` | `GET` | `taskId` | 获取任务详情 |
+| `zentao_create_task` | `/executions/{executionId}/tasks` | `POST` | `executionId,name,type` | 创建任务（写操作） |
+| `zentao_update_task` | `/tasks/{taskId}` | `PUT` | `taskId` | 更新任务（写操作） |
+| `zentao_start_task` | `/tasks/{taskId}/start` | `POST` | `taskId,consumed` | 开始任务 |
+| `zentao_pause_task` | `/tasks/{taskId}/pause` | `POST` | `taskId` | 暂停任务 |
+| `zentao_restart_task` | `/tasks/{taskId}/restart` | `POST` | `taskId` | 重启任务 |
+| `zentao_finish_task` | `/tasks/{taskId}/finish` | `POST` | `taskId,consumed` | 完成任务 |
+| `zentao_close_task` | `/tasks/{taskId}/close` | `POST` | `taskId` | 关闭任务 |
 | `zentao_list_bugs` | `/products/{scopeId}/bugs` 或 `/projects/{scopeId}/bugs` | `GET` | `scope,scopeId` | `scope in [product,project]` |
 | `zentao_get_bug` | `/bugs/{bugId}` | `GET` | `bugId` | 获取 Bug 详情 |
+| `zentao_create_bug` | `/products/{productId}/bugs` | `POST` | `productId,title,severity,priority,type` | 创建 Bug（写操作） |
+| `zentao_assign_bug` | `/bugs/{bugId}/confirm` | `POST` | `bugId,assignedTo` | 指派 Bug（confirm 动作） |
+| `zentao_resolve_bug` | `/bugs/{bugId}/resolve` | `POST` | `bugId,resolution` | 解决 Bug |
+| `zentao_close_bug` | `/bugs/{bugId}/close` | `POST` | `bugId` | 关闭 Bug |
+| `zentao_activate_bug` | `/bugs/{bugId}/active` | `POST` | `bugId` | 激活（重新打开）Bug |
 
 ## 3. 参数规范（MCP 入参）
 

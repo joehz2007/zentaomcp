@@ -563,6 +563,130 @@
       "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
     },
     {
+      "name": "zentao_create_task",
+      "description": "在执行下创建任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "executionId": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["design", "devel", "test", "study", "discuss", "ui", "affair", "misc"]
+          },
+          "priority": { "type": "integer", "minimum": 1 },
+          "desc": { "type": "string" },
+          "assignedTo": { "type": "string" },
+          "estimate": { "type": "number", "minimum": 0 },
+          "story": { "type": "integer", "minimum": 1 },
+          "module": { "type": "integer", "minimum": 1 },
+          "deadline": { "type": "string" }
+        },
+        "required": ["executionId", "name", "type"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_update_task",
+      "description": "更新任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["design", "devel", "test", "study", "discuss", "ui", "affair", "misc"]
+          },
+          "priority": { "type": "integer", "minimum": 1 },
+          "desc": { "type": "string" },
+          "assignedTo": { "type": "string" },
+          "estimate": { "type": "number", "minimum": 0 },
+          "story": { "type": "integer", "minimum": 1 },
+          "module": { "type": "integer", "minimum": 1 },
+          "deadline": { "type": "string" },
+          "status": { "type": "string" }
+        },
+        "required": ["taskId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_start_task",
+      "description": "开始任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "consumed": { "type": "number", "minimum": 0 },
+          "comment": { "type": "string" }
+        },
+        "required": ["taskId", "consumed"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_pause_task",
+      "description": "暂停任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "comment": { "type": "string" }
+        },
+        "required": ["taskId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_restart_task",
+      "description": "重启任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "comment": { "type": "string" }
+        },
+        "required": ["taskId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_finish_task",
+      "description": "完成任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "consumed": { "type": "number", "minimum": 0 },
+          "left": { "type": "number", "minimum": 0 },
+          "comment": { "type": "string" }
+        },
+        "required": ["taskId", "consumed"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_close_task",
+      "description": "关闭任务（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "comment": { "type": "string" }
+        },
+        "required": ["taskId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
       "name": "zentao_list_bugs",
       "description": "查询 Bug 列表（按产品或项目，支持二次过滤、排序）",
       "inputSchema": {
@@ -606,6 +730,142 @@
         "type": "object",
         "properties": {
           "bugId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["bugId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/bugDetailResult" }
+    },
+    {
+      "name": "zentao_create_bug",
+      "description": "创建 Bug（写操作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "productId": { "type": "integer", "minimum": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "severity": { "type": "integer", "minimum": 1 },
+          "priority": { "type": "integer", "minimum": 1 },
+          "type": {
+            "type": "string",
+            "enum": [
+              "codeerror",
+              "config",
+              "install",
+              "security",
+              "performance",
+              "standard",
+              "automation",
+              "designdefect",
+              "others"
+            ]
+          },
+          "steps": { "type": "string" },
+          "module": { "type": "integer", "minimum": 1 },
+          "project": { "type": "integer", "minimum": 1 },
+          "execution": { "type": "integer", "minimum": 1 },
+          "story": { "type": "integer", "minimum": 1 },
+          "task": { "type": "integer", "minimum": 1 },
+          "keywords": { "type": "string" },
+          "deadline": { "type": "string" },
+          "os": { "type": "string" },
+          "browser": { "type": "string" },
+          "openedBuild": {
+            "type": "array",
+            "items": {
+              "oneOf": [{ "type": "string" }, { "type": "integer" }]
+            },
+            "minItems": 1
+          }
+        },
+        "required": ["productId", "title", "severity", "priority", "type"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/bugDetailResult" }
+    },
+    {
+      "name": "zentao_assign_bug",
+      "description": "指派 Bug（基于 confirm 动作）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 },
+          "assignedTo": { "type": "string", "minLength": 1 },
+          "comment": { "type": "string" },
+          "priority": { "type": "integer", "minimum": 1 },
+          "type": {
+            "type": "string",
+            "enum": [
+              "codeerror",
+              "config",
+              "install",
+              "security",
+              "performance",
+              "standard",
+              "automation",
+              "designdefect",
+              "others"
+            ]
+          },
+          "mailto": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          }
+        },
+        "required": ["bugId", "assignedTo"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/bugDetailResult" }
+    },
+    {
+      "name": "zentao_resolve_bug",
+      "description": "解决 Bug",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 },
+          "resolution": {
+            "type": "string",
+            "enum": ["fixed", "bydesign", "duplicate", "external", "notrepro", "postponed", "willnotfix"]
+          },
+          "comment": { "type": "string" },
+          "duplicateBug": { "type": "integer", "minimum": 1 },
+          "assignedTo": { "type": "string" },
+          "mailto": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          }
+        },
+        "required": ["bugId", "resolution"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/bugDetailResult" }
+    },
+    {
+      "name": "zentao_close_bug",
+      "description": "关闭 Bug",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 },
+          "comment": { "type": "string" }
+        },
+        "required": ["bugId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/bugDetailResult" }
+    },
+    {
+      "name": "zentao_activate_bug",
+      "description": "激活（重新打开）Bug",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 },
+          "assignedTo": { "type": "string" },
+          "comment": { "type": "string" }
         },
         "required": ["bugId"],
         "additionalProperties": false

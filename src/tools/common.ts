@@ -40,6 +40,19 @@ export function readString(args: Args, key: string): string | undefined {
   return text || undefined;
 }
 
+export function readStringArray(args: Args, key: string): string[] | undefined {
+  const value = args[key];
+  if (value === undefined || value === null) return undefined;
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((item) => readString({ item }, "item"))
+      .filter((item): item is string => Boolean(item));
+    return normalized.length > 0 ? normalized : undefined;
+  }
+  const single = readString(args, key);
+  return single ? [single] : undefined;
+}
+
 export function readEnum<T extends string>(
   args: Args,
   key: string,

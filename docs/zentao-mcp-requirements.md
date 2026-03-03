@@ -32,7 +32,7 @@
 - 基础健康检查和错误处理。
 
 ### 4.2 非本期范围（Out of Scope）
-- 创建、修改、删除禅道数据（写操作）。
+- 批量创建、批量更新、批量删除等高风险写操作。
 - 禅道流程配置、字段配置自动化。
 - 禅道附件二进制下载与上传。
 - 高级报表与 BI 可视化（可在后续迭代）。
@@ -60,6 +60,10 @@
 - FR-08：支持任务详情查询（按任务 ID）。
 - FR-09：支持 Bug 列表查询（产品 Bug、项目 Bug；分页、严重程度、状态过滤）。
 - FR-10：支持 Bug 详情查询（按 Bug ID）。
+- FR-15：支持创建/更新任务（写操作）。
+- FR-16：支持任务开始/暂停/重启/完成/关闭动作（写操作）。
+- FR-13：支持创建 Bug（写操作）。
+- FR-14：支持 Bug 指派/解决/关闭/激活动作（写操作）。
 - FR-11：支持统一错误模型（认证失败、权限不足、参数错误、上游超时、上游异常）。
 - FR-12：支持健康检查工具（禅道连通性、认证状态）。
 
@@ -72,8 +76,20 @@
 - `zentao_get_story`
 - `zentao_list_tasks`
 - `zentao_get_task`
+- `zentao_create_task`
+- `zentao_update_task`
+- `zentao_start_task`
+- `zentao_pause_task`
+- `zentao_restart_task`
+- `zentao_finish_task`
+- `zentao_close_task`
 - `zentao_list_bugs`
 - `zentao_get_bug`
+- `zentao_create_bug`
+- `zentao_assign_bug`
+- `zentao_resolve_bug`
+- `zentao_close_bug`
+- `zentao_activate_bug`
 
 说明：
 - 工具名可按团队命名规范调整，但应保持“资源 + 动作”一致性。

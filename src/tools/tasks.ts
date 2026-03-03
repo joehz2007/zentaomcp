@@ -2,6 +2,15 @@ import { ZenTaoApiError } from "../domain/errors.js";
 import { mapTaskDetail, mapTaskList } from "../domain/mappers.js";
 import { errResult, okResult } from "../infra/result.js";
 import type { ToolContext, ToolDefinition } from "../server/toolRegistry.js";
+import type {
+  CloseTaskInput,
+  CreateTaskInput,
+  FinishTaskInput,
+  PauseTaskInput,
+  RestartTaskInput,
+  StartTaskInput,
+  UpdateTaskInput,
+} from "../zentao/apiClient.js";
 import { postProcessList } from "./listPostProcess.js";
 import {
   asRecord,
@@ -14,7 +23,17 @@ import {
 } from "./common.js";
 
 export function createTaskTools(context: ToolContext): ToolDefinition[] {
-  return [createListTasksTool(context), createGetTaskTool(context)];
+  return [
+    createListTasksTool(context),
+    createGetTaskTool(context),
+    createCreateTaskTool(context),
+    createUpdateTaskTool(context),
+    createStartTaskTool(context),
+    createPauseTaskTool(context),
+    createRestartTaskTool(context),
+    createFinishTaskTool(context),
+    createCloseTaskTool(context),
+  ];
 }
 
 function createListTasksTool(context: ToolContext): ToolDefinition {
@@ -150,6 +169,332 @@ function createGetTaskTool(context: ToolContext): ToolDefinition {
           return errResult(error.code, error.message, requestId, error.details);
         }
         return errResult("UPSTREAM_ERROR", "查询任务详情失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createCreateTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_create_task",
+    description: "在执行下创建任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        executionId: { type: "integer", minimum: 1 },
+        name: { type: "string", minLength: 1 },
+        type: {
+          type: "string",
+          enum: ["design", "devel", "test", "study", "discuss", "ui", "affair", "misc"],
+        },
+        priority: { type: "integer", minimum: 1 },
+        desc: { type: "string" },
+        assignedTo: { type: "string" },
+        estimate: { type: "number", minimum: 0 },
+        story: { type: "integer", minimum: 1 },
+        module: { type: "integer", minimum: 1 },
+        deadline: { type: "string" },
+      },
+      required: ["executionId", "name", "type"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_create_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const executionId = readPositiveInt(args, "executionId", true);
+        const name = readString(args, "name");
+        if (!name) throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 name 不能为空");
+        const taskType = readString(args, "type");
+        if (!taskType) throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 type 不能为空");
+
+        const payload: CreateTaskInput = { name, type: taskType };
+        const priority = readPositiveInt(args, "priority", false, 0);
+        if (priority > 0) payload.pri = priority;
+        const desc = readString(args, "desc");
+        if (desc) payload.desc = desc;
+        const assignedTo = readString(args, "assignedTo");
+        if (assignedTo) payload.assignedTo = assignedTo;
+        const estimate = Number(args.estimate);
+        if (Number.isFinite(estimate) && estimate >= 0) payload.estimate = estimate;
+        const story = readPositiveInt(args, "story", false, 0);
+        if (story > 0) payload.story = story;
+        const module = readPositiveInt(args, "module", false, 0);
+        if (module > 0) payload.module = module;
+        const deadline = readString(args, "deadline");
+        if (deadline) payload.deadline = deadline;
+
+        const result = await apiClient.createTask(executionId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "创建任务失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createUpdateTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_update_task",
+    description: "更新任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        name: { type: "string" },
+        type: {
+          type: "string",
+          enum: ["design", "devel", "test", "study", "discuss", "ui", "affair", "misc"],
+        },
+        priority: { type: "integer", minimum: 1 },
+        desc: { type: "string" },
+        assignedTo: { type: "string" },
+        estimate: { type: "number", minimum: 0 },
+        story: { type: "integer", minimum: 1 },
+        module: { type: "integer", minimum: 1 },
+        deadline: { type: "string" },
+        status: { type: "string" },
+      },
+      required: ["taskId"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_update_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const payload: UpdateTaskInput = {};
+        const name = readString(args, "name");
+        if (name) payload.name = name;
+        const taskType = readString(args, "type");
+        if (taskType) payload.type = taskType;
+        const priority = readPositiveInt(args, "priority", false, 0);
+        if (priority > 0) payload.pri = priority;
+        const desc = readString(args, "desc");
+        if (desc) payload.desc = desc;
+        const assignedTo = readString(args, "assignedTo");
+        if (assignedTo) payload.assignedTo = assignedTo;
+        const estimate = Number(args.estimate);
+        if (Number.isFinite(estimate) && estimate >= 0) payload.estimate = estimate;
+        const story = readPositiveInt(args, "story", false, 0);
+        if (story > 0) payload.story = story;
+        const module = readPositiveInt(args, "module", false, 0);
+        if (module > 0) payload.module = module;
+        const deadline = readString(args, "deadline");
+        if (deadline) payload.deadline = deadline;
+        const status = readString(args, "status");
+        if (status) payload.status = status;
+        if (Object.keys(payload).length === 0) {
+          throw new ZenTaoApiError("INVALID_ARGUMENT", "至少传入一个可更新字段");
+        }
+
+        const result = await apiClient.updateTask(taskId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "更新任务失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createStartTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_start_task",
+    description: "开始任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        consumed: { type: "number", minimum: 0 },
+        comment: { type: "string" },
+      },
+      required: ["taskId", "consumed"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_start_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const consumed = Number(args.consumed);
+        if (!Number.isFinite(consumed) || consumed < 0) {
+          throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 consumed 必须为大于等于 0 的数字");
+        }
+        const payload: StartTaskInput = { consumed };
+        const comment = readString(args, "comment");
+        if (comment) payload.comment = comment;
+
+        const result = await apiClient.startTask(taskId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "开始任务失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createPauseTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_pause_task",
+    description: "暂停任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        comment: { type: "string" },
+      },
+      required: ["taskId"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_pause_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const payload: PauseTaskInput = {};
+        const comment = readString(args, "comment");
+        if (comment) payload.comment = comment;
+
+        const result = await apiClient.pauseTask(taskId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "暂停任务失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createRestartTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_restart_task",
+    description: "重启任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        comment: { type: "string" },
+      },
+      required: ["taskId"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_restart_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const payload: RestartTaskInput = {};
+        const comment = readString(args, "comment");
+        if (comment) payload.comment = comment;
+
+        const result = await apiClient.restartTask(taskId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "重启任务失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createFinishTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_finish_task",
+    description: "完成任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        consumed: { type: "number", minimum: 0 },
+        left: { type: "number", minimum: 0 },
+        comment: { type: "string" },
+      },
+      required: ["taskId", "consumed"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_finish_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const consumed = Number(args.consumed);
+        if (!Number.isFinite(consumed) || consumed < 0) {
+          throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 consumed 必须为大于等于 0 的数字");
+        }
+        const payload: FinishTaskInput = { consumed };
+        const left = Number(args.left);
+        if (Number.isFinite(left) && left >= 0) payload.left = left;
+        const comment = readString(args, "comment");
+        if (comment) payload.comment = comment;
+
+        const result = await apiClient.finishTask(taskId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "完成任务失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createCloseTaskTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_close_task",
+    description: "关闭任务（写操作）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        comment: { type: "string" },
+      },
+      required: ["taskId"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_close_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const payload: CloseTaskInput = {};
+        const comment = readString(args, "comment");
+        if (comment) payload.comment = comment;
+
+        const result = await apiClient.closeTask(taskId, payload);
+        return okResult(mapTaskDetail(result), requestId);
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "关闭任务失败", requestId, { reason: String(error) });
       }
     },
   };

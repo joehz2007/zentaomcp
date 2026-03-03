@@ -42,6 +42,7 @@ export function createMcpServer(): { start: () => Promise<void> } {
       logger.info("zentao_mcp_server_started", {
         version: "0.1.0",
         hasBaseUrl: Boolean(config.zentaoBaseUrl),
+        enableWriteTools: config.enableWriteTools,
       });
     },
   };

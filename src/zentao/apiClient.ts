@@ -10,6 +10,97 @@ type QueryInput = PaginationInput & {
   severity?: string;
 };
 
+export type CreateBugInput = {
+  title: string;
+  severity: number;
+  pri: number;
+  type: string;
+  steps?: string;
+  module?: number;
+  project?: number;
+  execution?: number;
+  story?: number;
+  task?: number;
+  keywords?: string;
+  deadline?: string;
+  os?: string;
+  browser?: string;
+  openedBuild?: string[];
+};
+
+export type ConfirmBugInput = {
+  assignedTo?: string;
+  comment?: string;
+  pri?: number;
+  type?: string;
+  mailto?: string[];
+};
+
+export type CloseBugInput = {
+  comment?: string;
+};
+
+export type ActivateBugInput = {
+  assignedTo?: string;
+  comment?: string;
+};
+
+export type ResolveBugInput = {
+  resolution: "fixed" | "bydesign" | "duplicate" | "external" | "notrepro" | "postponed" | "willnotfix";
+  comment?: string;
+  duplicateBug?: number;
+  assignedTo?: string;
+  mailto?: string[];
+};
+
+export type CreateTaskInput = {
+  name: string;
+  type: string;
+  pri?: number;
+  desc?: string;
+  assignedTo?: string;
+  estimate?: number;
+  story?: number;
+  module?: number;
+  deadline?: string;
+};
+
+export type UpdateTaskInput = {
+  name?: string;
+  type?: string;
+  pri?: number;
+  desc?: string;
+  assignedTo?: string;
+  estimate?: number;
+  story?: number;
+  module?: number;
+  deadline?: string;
+  status?: string;
+};
+
+export type StartTaskInput = {
+  consumed: number;
+  comment?: string;
+};
+
+export type PauseTaskInput = {
+  comment?: string;
+};
+
+export type RestartTaskInput = {
+  comment?: string;
+};
+
+export type FinishTaskInput = {
+  consumed: number;
+  left?: number;
+  comment?: string;
+};
+
+export type CloseTaskInput = {
+  comment?: string;
+};
+
 export class ZenTaoApiClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
@@ -103,6 +194,34 @@ export class ZenTaoApiClient {
     return this.get(ENDPOINTS.taskById(taskId));
   }
 
+  async createTask(executionId: number, payload: CreateTaskInput): Promise<unknown> {
+    return this.post(ENDPOINTS.createTaskByExecution(executionId), payload);
+  }
+
+  async updateTask(taskId: number, payload: UpdateTaskInput): Promise<unknown> {
+    return this.put(ENDPOINTS.taskById(taskId), payload);
+  }
+
+  async startTask(taskId: number, payload: StartTaskInput): Promise<unknown> {
+    return this.post(ENDPOINTS.startTaskById(taskId), payload);
+  }
+
+  async pauseTask(taskId: number, payload: PauseTaskInput): Promise<unknown> {
+    return this.post(ENDPOINTS.pauseTaskById(taskId), payload);
+  }
+
+  async restartTask(taskId: number, payload: RestartTaskInput): Promise<unknown> {
+    return this.post(ENDPOINTS.restartTaskById(taskId), payload);
+  }
+
+  async finishTask(taskId: number, payload: FinishTaskInput): Promise<unknown> {
+    return this.post(ENDPOINTS.finishTaskById(taskId), payload);
+  }
+
+  async closeTask(taskId: number, payload: CloseTaskInput): Promise<unknown> {
+    return this.post(ENDPOINTS.closeTaskById(taskId), payload);
+  }
+
   async listBugs(scope: "product" | "project", scopeId: number, query: QueryInput): Promise<unknown> {
     const path =
       scope === "product"
@@ -124,11 +243,44 @@ export class ZenTaoApiClient {
     return this.get(ENDPOINTS.bugById(bugId));
   }
 
+  async createBug(productId: number, payload: CreateBugInput): Promise<unknown> {
+    return this.post(ENDPOINTS.createBugByProduct(productId), payload);
+  }
+
+  async confirmBug(bugId: number, payload: ConfirmBugInput): Promise<unknown> {
+    return this.post(ENDPOINTS.confirmBugById(bugId), payload);
+  }
+
+  async closeBug(bugId: number, payload: CloseBugInput): Promise<unknown> {
+    return this.post(ENDPOINTS.closeBugById(bugId), payload);
+  }
+
+  async activateBug(bugId: number, payload: ActivateBugInput): Promise<unknown> {
+    return this.post(ENDPOINTS.activateBugById(bugId), payload);
+  }
+
+  async resolveBug(bugId: number, payload: ResolveBugInput): Promise<unknown> {
+    return this.post(ENDPOINTS.resolveBugById(bugId), payload);
+  }
+
   private async get(path: string): Promise<unknown> {
     return this.request("GET", path);
   }
 
-  private async request(method: string, path: string, hasRetriedAuth = false): Promise<unknown> {
+  private async post(path: string, body: Record<string, unknown>): Promise<unknown> {
+    return this.request("POST", path, false, body);
+  }
+
+  private async put(path: string, body: Record<string, unknown>): Promise<unknown> {
+    return this.request("PUT", path, false, body);
+  }
+
+  private async request(
+    method: string,
+    path: string,
+    hasRetriedAuth = false,
+    body?: Record<string, unknown>,
+  ): Promise<unknown> {
     const token = await this.authClient.getToken(hasRetriedAuth);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -140,6 +292,7 @@ export class ZenTaoApiClient {
           Token: token,
           "Content-Type": "application/json",
         },
+        body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
 
@@ -147,7 +300,7 @@ export class ZenTaoApiClient {
 
       if ((response.status === 401 || response.status === 403) && !hasRetriedAuth) {
         await this.authClient.getToken(true);
-        return this.request(method, path, true);
+        return this.request(method, path, true, body);
       }
 
       if (!response.ok) {

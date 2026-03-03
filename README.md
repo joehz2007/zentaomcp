@@ -1,6 +1,6 @@
 # zentao-mcp
 
-ZenTao 18.13 的只读 MCP 服务（TypeScript）。
+ZenTao 18.13 的 MCP 服务（TypeScript，读写能力逐步扩展）。
 
 ## 已发布 npm
 - 包名：`zentao-mcp`
@@ -45,11 +45,7 @@ claude mcp add zentao -- npx -y zentao-mcp
 [mcp_servers.zentao]
 command = "npx"
 args = ["-y", "zentao-mcp"]
-env = {
-  ZENTAO_BASE_URL = "https://zentao.example.com/",
-  ZENTAO_ACCOUNT = "your_account",
-  ZENTAO_PASSWORD = "your_password"
-}
+env = { ZENTAO_BASE_URL = "https://zentao.example.com/", ZENTAO_ACCOUNT = "your_account", ZENTAO_PASSWORD = "your_password" }
 startup_timeout_sec = 60.0
 tool_timeout_sec = 60.0
 ```
@@ -64,7 +60,7 @@ tool_timeout_sec = 60.0
 
 ## 功能
 - MCP Server（stdio）
-- 10 个工具：
+- 默认 10 个只读工具（推荐生产默认）：
   - `zentao_health_check`
   - `zentao_list_projects`
   - `zentao_get_project`
@@ -75,6 +71,19 @@ tool_timeout_sec = 60.0
   - `zentao_get_task`
   - `zentao_list_bugs`
   - `zentao_get_bug`
+- 可选开启写工具（共 12 个，需设置 `MCP_ENABLE_WRITE_TOOLS=true`）：
+  - `zentao_create_task`
+  - `zentao_update_task`
+  - `zentao_start_task`
+  - `zentao_pause_task`
+  - `zentao_restart_task`
+  - `zentao_finish_task`
+  - `zentao_close_task`
+  - `zentao_create_bug`
+  - `zentao_assign_bug`
+  - `zentao_resolve_bug`
+  - `zentao_close_bug`
+  - `zentao_activate_bug`
 - `ZenTaoAuthClient`（Token 获取与缓存）
 - `ZenTaoApiClient`（端点封装、鉴权重试、错误映射）
 
@@ -93,6 +102,7 @@ tool_timeout_sec = 60.0
 - `MCP_DEFAULT_PAGE`（默认 `1`）
 - `MCP_DEFAULT_LIMIT`（默认 `20`）
 - `MCP_MAX_LIMIT`（默认 `100`）
+- `MCP_ENABLE_WRITE_TOOLS`（默认 `false`，设为 `true` 时注册 Task/Bug 写操作工具）
 
 ## 本地开发
 1. 复制配置文件：`.env.example` -> `.env`
@@ -103,6 +113,6 @@ tool_timeout_sec = 60.0
 6. 启动（stdio）：`npm start`
 
 ## 说明
-- 当前版本已实现 10 个只读工具，覆盖项目/执行/需求/任务/Bug 的列表与详情查询。
+- 当前版本默认只读（10 个工具）；如需写操作可通过环境变量显式开启。
 - 返回结果包含标准化字段映射，并保留 `raw` 原始响应用于排障。
 - 测试覆盖了参数校验、scope 路由和错误码映射等关键路径。

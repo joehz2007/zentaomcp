@@ -15,8 +15,20 @@ function buildContext(
     getStory: async () => ({}),
     listTasks: async () => ({ tasks: [] }),
     getTask: async () => ({}),
+    createTask: async () => ({ task: { id: 1 } }),
+    updateTask: async () => ({ task: { id: 1 } }),
+    startTask: async () => ({ task: { id: 1 } }),
+    pauseTask: async () => ({ task: { id: 1 } }),
+    restartTask: async () => ({ task: { id: 1 } }),
+    finishTask: async () => ({ task: { id: 1 } }),
+    closeTask: async () => ({ task: { id: 1 } }),
     listBugs: async () => ({ bugs: [] }),
     getBug: async () => ({}),
+    createBug: async () => ({ bug: { id: 1 } }),
+    confirmBug: async () => ({ bug: { id: 1 } }),
+    resolveBug: async () => ({ bug: { id: 1 } }),
+    closeBug: async () => ({ bug: { id: 1 } }),
+    activateBug: async () => ({ bug: { id: 1 } }),
   };
 
   const apiClient = { ...baseApiClient, ...(overrides ?? {}) } as unknown as ToolContext["apiClient"];
@@ -32,6 +44,7 @@ function buildContext(
       defaultPage: 1,
       defaultLimit: 20,
       maxLimit: 100,
+      enableWriteTools: false,
     },
   };
 }
@@ -46,6 +59,14 @@ describe("tool runtime integration", () => {
     const registry = new ToolRegistry(buildContext());
     const result = listToolsResult(registry);
     assert.equal(result.tools.length, 10);
+  });
+
+  it("lists write tools when enableWriteTools=true", () => {
+    const context = buildContext();
+    context.config.enableWriteTools = true;
+    const registry = new ToolRegistry(context);
+    const result = listToolsResult(registry);
+    assert.equal(result.tools.length, 22);
   });
 
   it("runs call_tool for list_projects with filter and sort", async () => {

@@ -10,6 +10,15 @@ function readNumberEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function readBooleanEnv(name: string, fallback: boolean): boolean {
+  const value = readEnv(name);
+  if (!value) return fallback;
+  const normalized = value.toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return fallback;
+}
+
 export interface AppConfig {
   zentaoBaseUrl: string;
   zentaoAccount: string;
@@ -19,6 +28,7 @@ export interface AppConfig {
   defaultPage: number;
   defaultLimit: number;
   maxLimit: number;
+  enableWriteTools: boolean;
 }
 
 export function loadConfig(): AppConfig {
@@ -31,5 +41,6 @@ export function loadConfig(): AppConfig {
     defaultPage: readNumberEnv("MCP_DEFAULT_PAGE", 1),
     defaultLimit: readNumberEnv("MCP_DEFAULT_LIMIT", 20),
     maxLimit: readNumberEnv("MCP_MAX_LIMIT", 100),
+    enableWriteTools: readBooleanEnv("MCP_ENABLE_WRITE_TOOLS", false),
   };
 }

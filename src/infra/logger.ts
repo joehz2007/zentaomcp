@@ -7,8 +7,10 @@ function log(level: LogLevel, message: string, context?: Record<string, unknown>
     message,
     ...(context ?? {}),
   };
+  // MCP stdio transport reserves stdout for protocol frames only.
+  // Operational logs must go to stderr to avoid corrupting JSON-RPC messages.
   // eslint-disable-next-line no-console
-  console.log(JSON.stringify(payload));
+  console.error(JSON.stringify(payload));
 }
 
 export const logger = {
