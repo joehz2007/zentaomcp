@@ -103,6 +103,12 @@ tool_timeout_sec = 60.0
 - `MCP_DEFAULT_LIMIT`（默认 `20`）
 - `MCP_MAX_LIMIT`（默认 `100`）
 - `MCP_ENABLE_WRITE_TOOLS`（默认 `false`，设为 `true` 时注册 Task/Bug 写操作工具）
+- `ZENTAO_E2E`（默认 `0`，设为 `1` 才执行真实禅道沙箱 E2E）
+- `ZENTAO_E2E_PRODUCT_ID`（E2E 创建 Bug 使用的产品 ID）
+- `ZENTAO_E2E_EXECUTION_ID`（E2E 创建 Task 使用的执行 ID）
+- `ZENTAO_E2E_ASSIGNED_TO`（可选，开启生命周期动作时用于指派）
+- `ZENTAO_E2E_BUG_LIFECYCLE`（默认 `0`，设为 `1` 运行 Bug assign/resolve/close/activate）
+- `ZENTAO_E2E_TASK_LIFECYCLE`（默认 `0`，设为 `1` 运行 Task start/pause/restart/finish/close）
 
 ## 本地开发
 1. 复制配置文件：`.env.example` -> `.env`
@@ -111,6 +117,23 @@ tool_timeout_sec = 60.0
 4. 运行测试：`npm run test`
 5. 构建：`npm run build`
 6. 启动（stdio）：`npm start`
+
+## 真实禅道沙箱 E2E（手动开关）
+- 默认不会在 `npm run test` 执行。
+- 仅在显式运行 `npm run test:e2e` 且 `ZENTAO_E2E=1` 时执行真实写操作用例。
+- E2E 用例会在禅道中创建真实 Task/Bug，请务必使用沙箱环境。
+
+PowerShell 示例：
+```powershell
+$env:MCP_ENABLE_WRITE_TOOLS='true'
+$env:ZENTAO_E2E='1'
+$env:ZENTAO_E2E_PRODUCT_ID='123'
+$env:ZENTAO_E2E_EXECUTION_ID='456'
+$env:ZENTAO_E2E_ASSIGNED_TO='test_user' # 可选
+$env:ZENTAO_E2E_BUG_LIFECYCLE='1'       # 可选
+$env:ZENTAO_E2E_TASK_LIFECYCLE='1'      # 可选
+npm run test:e2e
+```
 
 ## 说明
 - 当前版本默认只读（10 个工具）；如需写操作可通过环境变量显式开启。
