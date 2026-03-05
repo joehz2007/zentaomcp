@@ -112,6 +112,64 @@ describe("attachments tool", () => {
     assert.equal(payload.size, 2);
   });
 
+  it("keeps title extension when session filename is missing", async () => {
+    const context = buildContext({
+      apiClient: {
+        getStory: async () => ({
+          data: {
+            story: {
+              id: 150,
+              files: {
+                "1774": {
+                  id: 1774,
+                  title: "系统日志脱敏数据清单.md",
+                  extension: "txt",
+                  size: 4059,
+                  webPath: "/data/upload/1/202601/2116032001455cfa",
+                },
+              },
+            },
+          },
+        }),
+      },
+      sessionClient: {
+        downloadBinary: async () => ({
+          sourcePath: "/data/upload/1/202601/2116032001455cfa",
+          content: new Uint8Array([1]),
+          contentType: "text/plain",
+          filename: undefined,
+        }),
+      },
+    });
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ storyId: 150, fileId: 1774 });
+    assert.equal(result.ok, true);
+    const payload = result.data as { filename: string };
+    assert.equal(payload.filename, "系统日志脱敏数据清单.md");
+  });
+
+  it("does not append extension when title has no suffix", async () => {
+    const context = buildContext({
+      sessionClient: {
+        downloadBinary: async () => ({
+          sourcePath: "/file-download-701.html",
+          content: new Uint8Array([1]),
+          contentType: "application/pdf",
+          filename: undefined,
+        }),
+      },
+    });
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ storyId: 150, fileId: 701 });
+    assert.equal(result.ok, true);
+    const payload = result.data as { filename: string };
+    assert.equal(payload.filename, "masking-plan");
+  });
+
   it("returns INVALID_ARGUMENT when fileId does not exist", async () => {
     const context = buildContext();
     const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_attachment");

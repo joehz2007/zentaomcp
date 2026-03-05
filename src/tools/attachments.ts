@@ -136,11 +136,8 @@ function createDownloadAttachmentTool(context: ToolContext): ToolDefinition {
 
 function buildFilename(attachment: StoryAttachment): string {
   const title = attachment.title.trim();
-  if (!attachment.extension) return title || `attachment_${attachment.id}`;
-  if (title.toLowerCase().endsWith(`.${attachment.extension.toLowerCase()}`)) {
-    return title;
-  }
-  return `${title || `attachment_${attachment.id}`}.${attachment.extension}`;
+  if (title) return title;
+  return `attachment_${attachment.id}`;
 }
 
 function extractStoryAttachments(payload: unknown): StoryAttachment[] {
