@@ -1,5 +1,7 @@
 export const ENDPOINTS = {
   tokens: "/api.php/v1/tokens",
+  sessionId: "/api-getsessionid.json",
+  userLogin: "/user-login.json",
   projects: "/api.php/v1/projects",
   projectById: (projectId: number) => `/api.php/v1/projects/${projectId}`,
   storiesByProduct: (productId: number) => `/api.php/v1/products/${productId}/stories`,
@@ -23,6 +25,7 @@ export const ENDPOINTS = {
   closeBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/close`,
   activateBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/active`,
   resolveBugById: (bugId: number) => `/api.php/v1/bugs/${bugId}/resolve`,
+  fileDownloadById: (fileId: number) => `/file-download-${fileId}.html`,
 };
 
 export function withQuery(

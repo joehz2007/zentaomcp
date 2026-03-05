@@ -34,7 +34,7 @@
 ### 4.2 非本期范围（Out of Scope）
 - 批量创建、批量更新、批量删除等高风险写操作。
 - 禅道流程配置、字段配置自动化。
-- 禅道附件二进制下载与上传。
+- 禅道附件上传。
 - 高级报表与 BI 可视化（可在后续迭代）。
 
 ## 5. 用户与使用场景
@@ -64,6 +64,7 @@
 - FR-16：支持任务开始/暂停/重启/完成/关闭动作（写操作）。
 - FR-13：支持创建 Bug（写操作）。
 - FR-14：支持 Bug 指派/解决/关闭/激活动作（写操作）。
+- FR-17：支持需求附件列表与附件下载（会话鉴权，下载返回 base64）。
 - FR-11：支持统一错误模型（认证失败、权限不足、参数错误、上游超时、上游异常）。
 - FR-12：支持健康检查工具（禅道连通性、认证状态）。
 
@@ -74,6 +75,8 @@
 - `zentao_list_executions`
 - `zentao_list_stories`
 - `zentao_get_story`
+- `zentao_list_story_attachments`
+- `zentao_download_attachment`
 - `zentao_list_tasks`
 - `zentao_get_task`
 - `zentao_create_task`

@@ -1,5 +1,7 @@
 import type { AppConfig } from "../infra/config.js";
 import type { ZenTaoApiClient } from "../zentao/apiClient.js";
+import type { ZenTaoSessionApiClient } from "../zentao/sessionApiClient.js";
+import { createAttachmentTools } from "../tools/attachments.js";
 import { createBugTools } from "../tools/bugs.js";
 import { createExecutionTools } from "../tools/executions.js";
 import { createHealthCheckTool } from "../tools/healthCheck.js";
@@ -11,6 +13,8 @@ import type { StandardResult } from "../domain/types.js";
 export interface ToolContext {
   apiClient: ZenTaoApiClient;
   getApiClientForArgs: (args: Record<string, unknown>) => ZenTaoApiClient;
+  sessionClient: ZenTaoSessionApiClient;
+  getSessionClientForArgs: (args: Record<string, unknown>) => ZenTaoSessionApiClient;
   config: AppConfig;
 }
 
@@ -33,11 +37,15 @@ export class ToolRegistry {
     const bugTools = createBugTools(context).filter(
       (tool) => context.config.enableWriteTools || readOnlyBugTools.has(tool.name),
     );
+    const attachmentTools = context.config.enableAttachmentTools
+      ? createAttachmentTools(context)
+      : [];
     const definitions = [
       createHealthCheckTool(context),
       ...createProjectTools(context),
       ...createExecutionTools(context),
       ...createStoryTools(context),
+      ...attachmentTools,
       ...taskTools,
       ...bugTools,
     ];

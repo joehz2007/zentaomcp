@@ -15,6 +15,8 @@
 | `zentao_list_executions` | `/projects/{projectId}/executions` | `GET` | `projectId` | 获取项目下执行列表，用于任务查询 |
 | `zentao_list_stories` | `/products/{scopeId}/stories` 或 `/projects/{scopeId}/stories` | `GET` | `scope,scopeId` | `scope in [product,project]` |
 | `zentao_get_story` | `/stories/{storyId}` | `GET` | `storyId` | 获取需求详情 |
+| `zentao_list_story_attachments` | `/stories/{storyId}` | `GET` | `storyId` | 从需求详情中提取附件列表 |
+| `zentao_download_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/file-download-{fileId}.html` | `GET/POST/GET` | `storyId,fileId` | 会话鉴权下载附件，返回 base64 |
 | `zentao_list_tasks` | `/executions/{scopeId}/tasks` 或 `/projects/{scopeId}/tasks` | `GET` | `scope,scopeId` | `scope in [execution,project]` |
 | `zentao_get_task` | `/tasks/{taskId}` | `GET` | `taskId` | 获取任务详情 |
 | `zentao_create_task` | `/executions/{executionId}/tasks` | `POST` | `executionId,name,type` | 创建任务（写操作） |
