@@ -46,7 +46,7 @@ export function loadConfig(): AppConfig {
     defaultLimit: readNumberEnv("MCP_DEFAULT_LIMIT", 20),
     maxLimit: readNumberEnv("MCP_MAX_LIMIT", 100),
     enableWriteTools: readBooleanEnv("MCP_ENABLE_WRITE_TOOLS", false),
-    enableAttachmentTools: readBooleanEnv("MCP_ENABLE_ATTACHMENT_TOOLS", false),
+    enableAttachmentTools: readBooleanEnv("MCP_ENABLE_ATTACHMENT_TOOLS", true),
     attachmentMaxBytes: readNumberEnv("MCP_ATTACHMENT_MAX_BYTES", 5 * 1024 * 1024),
   };
 }
