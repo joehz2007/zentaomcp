@@ -6,8 +6,10 @@ import { logger } from "../infra/logger.js";
 import { ToolRegistry } from "./toolRegistry.js";
 import { ZenTaoApiClient } from "../zentao/apiClient.js";
 import { ZenTaoAuthClient } from "../zentao/authClient.js";
+import { ZenTaoSessionApiClient } from "../zentao/sessionApiClient.js";
+import { ZenTaoSessionAuthClient } from "../zentao/sessionAuthClient.js";
 import { executeCallTool, listToolsResult } from "./toolRuntime.js";
-import { createApiClientResolver } from "./authOverride.js";
+import { createApiClientResolver, createSessionClientResolver } from "./authOverride.js";
 
 export function createMcpServer(): { start: () => Promise<void> } {
   const config = loadConfig();
@@ -19,8 +21,27 @@ export function createMcpServer(): { start: () => Promise<void> } {
     tokenTtlMs: config.zentaoTokenTtlMs,
   });
   const apiClient = new ZenTaoApiClient(config.zentaoBaseUrl, config.zentaoTimeoutMs, authClient);
+  const sessionAuthClient = new ZenTaoSessionAuthClient({
+    baseUrl: config.zentaoBaseUrl,
+    account: config.zentaoAccount,
+    password: config.zentaoPassword,
+    timeoutMs: config.zentaoTimeoutMs,
+    sessionTtlMs: config.zentaoSessionTtlMs,
+  });
+  const sessionClient = new ZenTaoSessionApiClient(
+    config.zentaoBaseUrl,
+    config.zentaoTimeoutMs,
+    sessionAuthClient,
+  );
   const getApiClientForArgs = createApiClientResolver(apiClient, config);
-  const registry = new ToolRegistry({ apiClient, getApiClientForArgs, config });
+  const getSessionClientForArgs = createSessionClientResolver(sessionClient, config);
+  const registry = new ToolRegistry({
+    apiClient,
+    getApiClientForArgs,
+    sessionClient,
+    getSessionClientForArgs,
+    config,
+  });
 
   const server = new Server(
     { name: "zentao-mcp", version: "0.1.0" },
@@ -43,6 +64,7 @@ export function createMcpServer(): { start: () => Promise<void> } {
         version: "0.1.0",
         hasBaseUrl: Boolean(config.zentaoBaseUrl),
         enableWriteTools: config.enableWriteTools,
+        enableAttachmentTools: config.enableAttachmentTools,
       });
     },
   };

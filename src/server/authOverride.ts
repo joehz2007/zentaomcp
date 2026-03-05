@@ -2,6 +2,8 @@ import { ZenTaoApiError } from "../domain/errors.js";
 import type { AppConfig } from "../infra/config.js";
 import { ZenTaoApiClient } from "../zentao/apiClient.js";
 import { ZenTaoAuthClient } from "../zentao/authClient.js";
+import { ZenTaoSessionApiClient } from "../zentao/sessionApiClient.js";
+import { ZenTaoSessionAuthClient } from "../zentao/sessionAuthClient.js";
 
 interface AuthOverride {
   baseUrl: string;
@@ -54,5 +56,32 @@ export function createApiClientResolver(
     const apiClient = new ZenTaoApiClient(override.baseUrl, config.zentaoTimeoutMs, authClient);
     cache.set(key, apiClient);
     return apiClient;
+  };
+}
+
+export function createSessionClientResolver(
+  defaultClient: ZenTaoSessionApiClient,
+  config: AppConfig,
+): (args: Record<string, unknown>) => ZenTaoSessionApiClient {
+  const cache = new Map<string, ZenTaoSessionApiClient>();
+
+  return (args: Record<string, unknown>) => {
+    const override = resolveAuthOverride(args);
+    if (!override) return defaultClient;
+
+    const key = `${override.baseUrl}::${override.account}::${override.password}`;
+    const cached = cache.get(key);
+    if (cached) return cached;
+
+    const authClient = new ZenTaoSessionAuthClient({
+      baseUrl: override.baseUrl,
+      account: override.account,
+      password: override.password,
+      timeoutMs: config.zentaoTimeoutMs,
+      sessionTtlMs: config.zentaoSessionTtlMs,
+    });
+    const sessionClient = new ZenTaoSessionApiClient(override.baseUrl, config.zentaoTimeoutMs, authClient);
+    cache.set(key, sessionClient);
+    return sessionClient;
   };
 }

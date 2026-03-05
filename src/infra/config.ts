@@ -25,10 +25,13 @@ export interface AppConfig {
   zentaoPassword: string;
   zentaoTimeoutMs: number;
   zentaoTokenTtlMs: number;
+  zentaoSessionTtlMs: number;
   defaultPage: number;
   defaultLimit: number;
   maxLimit: number;
   enableWriteTools: boolean;
+  enableAttachmentTools: boolean;
+  attachmentMaxBytes: number;
 }
 
 export function loadConfig(): AppConfig {
@@ -38,9 +41,12 @@ export function loadConfig(): AppConfig {
     zentaoPassword: readEnv("ZENTAO_PASSWORD") ?? "",
     zentaoTimeoutMs: readNumberEnv("ZENTAO_TIMEOUT_MS", 10_000),
     zentaoTokenTtlMs: readNumberEnv("ZENTAO_TOKEN_TTL_MS", 3_000_000),
+    zentaoSessionTtlMs: readNumberEnv("ZENTAO_SESSION_TTL_MS", 3_000_000),
     defaultPage: readNumberEnv("MCP_DEFAULT_PAGE", 1),
     defaultLimit: readNumberEnv("MCP_DEFAULT_LIMIT", 20),
     maxLimit: readNumberEnv("MCP_MAX_LIMIT", 100),
     enableWriteTools: readBooleanEnv("MCP_ENABLE_WRITE_TOOLS", false),
+    enableAttachmentTools: readBooleanEnv("MCP_ENABLE_ATTACHMENT_TOOLS", false),
+    attachmentMaxBytes: readNumberEnv("MCP_ATTACHMENT_MAX_BYTES", 5 * 1024 * 1024),
   };
 }

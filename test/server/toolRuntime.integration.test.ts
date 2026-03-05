@@ -32,19 +32,31 @@ function buildContext(
   };
 
   const apiClient = { ...baseApiClient, ...(overrides ?? {}) } as unknown as ToolContext["apiClient"];
+  const sessionClient = {
+    downloadBinary: async () => ({
+      sourcePath: "/file-download-1.html",
+      content: new Uint8Array([1]),
+      filename: "a.txt",
+    }),
+  } as unknown as ToolContext["sessionClient"];
   return {
     apiClient,
     getApiClientForArgs: () => apiClient,
+    sessionClient,
+    getSessionClientForArgs: () => sessionClient,
     config: {
       zentaoBaseUrl: "https://zentao.local",
       zentaoAccount: "admin",
       zentaoPassword: "pwd",
       zentaoTimeoutMs: 10000,
       zentaoTokenTtlMs: 100000,
+      zentaoSessionTtlMs: 100000,
       defaultPage: 1,
       defaultLimit: 20,
       maxLimit: 100,
       enableWriteTools: false,
+      enableAttachmentTools: false,
+      attachmentMaxBytes: 5 * 1024 * 1024,
     },
   };
 }
@@ -67,6 +79,16 @@ describe("tool runtime integration", () => {
     const registry = new ToolRegistry(context);
     const result = listToolsResult(registry);
     assert.equal(result.tools.length, 22);
+  });
+
+  it("lists attachment tools when enableAttachmentTools=true", () => {
+    const context = buildContext({
+      getStory: async () => ({ story: { id: 1, files: [] } }),
+    });
+    context.config.enableAttachmentTools = true;
+    const registry = new ToolRegistry(context);
+    const result = listToolsResult(registry);
+    assert.equal(result.tools.length, 12);
   });
 
   it("runs call_tool for list_projects with filter and sort", async () => {

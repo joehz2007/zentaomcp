@@ -71,6 +71,9 @@ tool_timeout_sec = 60.0
   - `zentao_get_task`
   - `zentao_list_bugs`
   - `zentao_get_bug`
+- 可选开启附件工具（共 2 个，需设置 `MCP_ENABLE_ATTACHMENT_TOOLS=true`）：
+  - `zentao_list_story_attachments`
+  - `zentao_download_attachment`
 - 可选开启写工具（共 12 个，需设置 `MCP_ENABLE_WRITE_TOOLS=true`）：
   - `zentao_create_task`
   - `zentao_update_task`
@@ -99,10 +102,13 @@ tool_timeout_sec = 60.0
 - `ZENTAO_PASSWORD`
 - `ZENTAO_TIMEOUT_MS`（默认 `10000`）
 - `ZENTAO_TOKEN_TTL_MS`（默认 `3000000`）
+- `ZENTAO_SESSION_TTL_MS`（默认 `3000000`）
 - `MCP_DEFAULT_PAGE`（默认 `1`）
 - `MCP_DEFAULT_LIMIT`（默认 `20`）
 - `MCP_MAX_LIMIT`（默认 `100`）
 - `MCP_ENABLE_WRITE_TOOLS`（默认 `false`，设为 `true` 时注册 Task/Bug 写操作工具）
+- `MCP_ENABLE_ATTACHMENT_TOOLS`（默认 `false`，设为 `true` 时注册附件查询/下载工具）
+- `MCP_ATTACHMENT_MAX_BYTES`（默认 `5242880`，附件下载最大字节数）
 - `ZENTAO_E2E`（默认 `0`，设为 `1` 才执行真实禅道沙箱 E2E）
 - `ZENTAO_E2E_PRODUCT_ID`（E2E 创建 Bug 使用的产品 ID）
 - `ZENTAO_E2E_EXECUTION_ID`（E2E 创建 Task 使用的执行 ID）

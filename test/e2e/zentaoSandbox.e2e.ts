@@ -4,9 +4,11 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { type AppConfig, loadConfig } from "../../src/infra/config.js";
 import { executeCallTool } from "../../src/server/toolRuntime.js";
 import { ToolRegistry } from "../../src/server/toolRegistry.js";
-import { createApiClientResolver } from "../../src/server/authOverride.js";
+import { createApiClientResolver, createSessionClientResolver } from "../../src/server/authOverride.js";
 import { ZenTaoApiClient } from "../../src/zentao/apiClient.js";
 import { ZenTaoAuthClient } from "../../src/zentao/authClient.js";
+import { ZenTaoSessionApiClient } from "../../src/zentao/sessionApiClient.js";
+import { ZenTaoSessionAuthClient } from "../../src/zentao/sessionAuthClient.js";
 
 type ToolResult = {
   ok: boolean;
@@ -73,8 +75,27 @@ describe("zentao sandbox e2e", { skip: !isE2EEnabled }, () => {
       tokenTtlMs: config.zentaoTokenTtlMs,
     });
     const apiClient = new ZenTaoApiClient(config.zentaoBaseUrl, config.zentaoTimeoutMs, authClient);
+    const sessionAuthClient = new ZenTaoSessionAuthClient({
+      baseUrl: config.zentaoBaseUrl,
+      account: config.zentaoAccount,
+      password: config.zentaoPassword,
+      timeoutMs: config.zentaoTimeoutMs,
+      sessionTtlMs: config.zentaoSessionTtlMs,
+    });
+    const sessionClient = new ZenTaoSessionApiClient(
+      config.zentaoBaseUrl,
+      config.zentaoTimeoutMs,
+      sessionAuthClient,
+    );
     const getApiClientForArgs = createApiClientResolver(apiClient, config);
-    registry = new ToolRegistry({ apiClient, getApiClientForArgs, config });
+    const getSessionClientForArgs = createSessionClientResolver(sessionClient, config);
+    registry = new ToolRegistry({
+      apiClient,
+      getApiClientForArgs,
+      sessionClient,
+      getSessionClientForArgs,
+      config,
+    });
   });
 
   it("checks sandbox connectivity and authentication", async () => {

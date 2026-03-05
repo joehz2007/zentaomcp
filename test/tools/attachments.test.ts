@@ -1,0 +1,124 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { createAttachmentTools } from "../../src/tools/attachments.js";
+import type { ToolContext } from "../../src/server/toolRegistry.js";
+
+function buildContext(overrides?: {
+  apiClient?: Partial<ToolContext["apiClient"]>;
+  sessionClient?: Partial<ToolContext["sessionClient"]>;
+}): ToolContext {
+  const apiClient = {
+    getStory: async () => ({
+      data: {
+        story: {
+          id: 150,
+          files: {
+            "701": {
+              id: 701,
+              title: "masking-plan",
+              extension: "pdf",
+              size: 1234,
+              downloadUrl: "/file-download-701.html",
+            },
+          },
+        },
+      },
+    }),
+    ...(overrides?.apiClient ?? {}),
+  } as unknown as ToolContext["apiClient"];
+
+  const sessionClient = {
+    downloadBinary: async () => ({
+      sourcePath: "/file-download-701.html",
+      content: new Uint8Array([1, 2, 3]),
+      contentType: "application/pdf",
+      filename: "masking-plan.pdf",
+    }),
+    ...(overrides?.sessionClient ?? {}),
+  } as unknown as ToolContext["sessionClient"];
+
+  return {
+    apiClient,
+    getApiClientForArgs: () => apiClient,
+    sessionClient,
+    getSessionClientForArgs: () => sessionClient,
+    config: {
+      zentaoBaseUrl: "https://zentao.local",
+      zentaoAccount: "admin",
+      zentaoPassword: "pwd",
+      zentaoTimeoutMs: 10000,
+      zentaoTokenTtlMs: 100000,
+      zentaoSessionTtlMs: 100000,
+      defaultPage: 1,
+      defaultLimit: 20,
+      maxLimit: 100,
+      enableWriteTools: false,
+      enableAttachmentTools: true,
+      attachmentMaxBytes: 10_000,
+    },
+  };
+}
+
+describe("attachments tool", () => {
+  it("lists story attachments", async () => {
+    const context = buildContext();
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_list_story_attachments");
+    assert.ok(tool);
+
+    const result = await tool.handler({ storyId: 150 });
+    assert.equal(result.ok, true);
+    const payload = result.data as { items: Array<{ id: number; title: string; extension?: string }> };
+    assert.equal(payload.items.length, 1);
+    assert.deepEqual(payload.items[0], {
+      id: 701,
+      title: "masking-plan",
+      extension: "pdf",
+      size: 1234,
+      downloadPath: "/file-download-701.html",
+    });
+  });
+
+  it("downloads attachment as base64", async () => {
+    let capturedPath = "";
+    let capturedMaxBytes = 0;
+    const context = buildContext({
+      sessionClient: {
+        downloadBinary: async (path: string, maxBytes: number) => {
+          capturedPath = path;
+          capturedMaxBytes = maxBytes;
+          return {
+            sourcePath: path,
+            content: new Uint8Array([0, 255]),
+            contentType: "application/octet-stream",
+            filename: "masked.txt",
+          };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ storyId: 150, fileId: 701, maxBytes: 64 });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/file-download-701.html");
+    assert.equal(capturedMaxBytes, 64);
+    const payload = result.data as {
+      filename: string;
+      contentBase64: string;
+      size: number;
+    };
+    assert.equal(payload.filename, "masked.txt");
+    assert.equal(payload.contentBase64, "AP8=");
+    assert.equal(payload.size, 2);
+  });
+
+  it("returns INVALID_ARGUMENT when fileId does not exist", async () => {
+    const context = buildContext();
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ storyId: 150, fileId: 999 });
+    assert.equal(result.ok, false);
+    assert.equal(result.error?.code, "INVALID_ARGUMENT");
+  });
+});

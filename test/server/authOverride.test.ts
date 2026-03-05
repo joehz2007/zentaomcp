@@ -2,8 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { ZenTaoApiError } from "../../src/domain/errors.js";
 import type { AppConfig } from "../../src/infra/config.js";
-import { createApiClientResolver, resolveAuthOverride } from "../../src/server/authOverride.js";
+import {
+  createApiClientResolver,
+  createSessionClientResolver,
+  resolveAuthOverride,
+} from "../../src/server/authOverride.js";
 import type { ZenTaoApiClient } from "../../src/zentao/apiClient.js";
+import type { ZenTaoSessionApiClient } from "../../src/zentao/sessionApiClient.js";
 
 describe("auth override", () => {
   it("returns null when no override args are provided", () => {
@@ -29,13 +34,53 @@ describe("auth override", () => {
       zentaoPassword: "default",
       zentaoTimeoutMs: 10000,
       zentaoTokenTtlMs: 600000,
+      zentaoSessionTtlMs: 600000,
       defaultPage: 1,
       defaultLimit: 20,
       maxLimit: 100,
       enableWriteTools: false,
+      enableAttachmentTools: false,
+      attachmentMaxBytes: 5 * 1024 * 1024,
     };
 
     const resolver = createApiClientResolver(defaultClient, config);
+
+    const noOverride = resolver({});
+    assert.equal(noOverride, defaultClient);
+
+    const client1 = resolver({
+      baseUrl: "https://zentao.a.local",
+      account: "alice",
+      password: "pwd",
+    });
+    const client2 = resolver({
+      baseUrl: "https://zentao.a.local",
+      account: "alice",
+      password: "pwd",
+    });
+
+    assert.notEqual(client1, defaultClient);
+    assert.equal(client1, client2);
+  });
+
+  it("creates and caches sessionClient for full override credentials", () => {
+    const defaultClient = { marker: "default_session" } as unknown as ZenTaoSessionApiClient;
+    const config: AppConfig = {
+      zentaoBaseUrl: "https://default.local",
+      zentaoAccount: "default",
+      zentaoPassword: "default",
+      zentaoTimeoutMs: 10000,
+      zentaoTokenTtlMs: 600000,
+      zentaoSessionTtlMs: 600000,
+      defaultPage: 1,
+      defaultLimit: 20,
+      maxLimit: 100,
+      enableWriteTools: false,
+      enableAttachmentTools: false,
+      attachmentMaxBytes: 5 * 1024 * 1024,
+    };
+
+    const resolver = createSessionClientResolver(defaultClient, config);
 
     const noOverride = resolver({});
     assert.equal(noOverride, defaultClient);
