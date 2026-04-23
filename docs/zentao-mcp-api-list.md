@@ -19,6 +19,8 @@
 | `zentao_download_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/file-download-{fileId}.html` | `GET/POST/GET` | `storyId,fileId` | 会话鉴权下载附件，返回 base64 |
 | `zentao_list_tasks` | `/executions/{scopeId}/tasks` 或 `/projects/{scopeId}/tasks` | `GET` | `scope,scopeId` | `scope in [execution,project]` |
 | `zentao_get_task` | `/tasks/{taskId}` | `GET` | `taskId` | 获取任务详情 |
+| `zentao_list_task_attachments` | `/tasks/{taskId}` | `GET` | `taskId` | 从任务详情中提取附件列表 |
+| `zentao_download_task_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/file-download-{fileId}.html` | `GET/POST/GET` | `taskId,fileId` | 会话鉴权下载任务附件，返回 base64 |
 | `zentao_create_task` | `/executions/{executionId}/tasks` | `POST` | `executionId,name,type` | 创建任务（写操作） |
 | `zentao_update_task` | `/tasks/{taskId}` | `PUT` | `taskId` | 更新任务（写操作） |
 | `zentao_start_task` | `/tasks/{taskId}/start` | `POST` | `taskId,consumed` | 开始任务 |

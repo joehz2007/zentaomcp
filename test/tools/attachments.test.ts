@@ -24,6 +24,22 @@ function buildContext(overrides?: {
         },
       },
     }),
+    getTask: async () => ({
+      data: {
+        task: {
+          id: 88,
+          attachments: [
+            {
+              fileID: 802,
+              name: "execution-log.txt",
+              ext: "txt",
+              size: 2048,
+              path: "file-download-802.html",
+            },
+          ],
+        },
+      },
+    }),
     ...(overrides?.apiClient ?? {}),
   } as unknown as ToolContext["apiClient"];
 
@@ -112,6 +128,60 @@ describe("attachments tool", () => {
     assert.equal(payload.size, 2);
   });
 
+  it("lists task attachments", async () => {
+    const context = buildContext();
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_list_task_attachments");
+    assert.ok(tool);
+
+    const result = await tool.handler({ taskId: 88 });
+    assert.equal(result.ok, true);
+    const payload = result.data as { items: Array<{ id: number; title: string; extension?: string }> };
+    assert.equal(payload.items.length, 1);
+    assert.deepEqual(payload.items[0], {
+      id: 802,
+      title: "execution-log.txt",
+      extension: "txt",
+      size: 2048,
+      downloadPath: "/file-download-802.html",
+    });
+  });
+
+  it("downloads task attachment as base64", async () => {
+    let capturedPath = "";
+    let capturedMaxBytes = 0;
+    const context = buildContext({
+      sessionClient: {
+        downloadBinary: async (path: string, maxBytes: number) => {
+          capturedPath = path;
+          capturedMaxBytes = maxBytes;
+          return {
+            sourcePath: path,
+            content: new Uint8Array([4, 5, 6]),
+            contentType: "text/plain",
+            filename: "execution-log.txt",
+          };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_task_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ taskId: 88, fileId: 802, maxBytes: 512 });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/file-download-802.html");
+    assert.equal(capturedMaxBytes, 512);
+    const payload = result.data as {
+      taskId: number;
+      filename: string;
+      contentBase64: string;
+      size: number;
+    };
+    assert.equal(payload.taskId, 88);
+    assert.equal(payload.filename, "execution-log.txt");
+    assert.equal(payload.contentBase64, "BAUG");
+    assert.equal(payload.size, 3);
+  });
+
   it("keeps title extension when session filename is missing", async () => {
     const context = buildContext({
       apiClient: {
@@ -176,6 +246,16 @@ describe("attachments tool", () => {
     assert.ok(tool);
 
     const result = await tool.handler({ storyId: 150, fileId: 999 });
+    assert.equal(result.ok, false);
+    assert.equal(result.error?.code, "INVALID_ARGUMENT");
+  });
+
+  it("returns INVALID_ARGUMENT when task fileId does not exist", async () => {
+    const context = buildContext();
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_task_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ taskId: 88, fileId: 999 });
     assert.equal(result.ok, false);
     assert.equal(result.error?.code, "INVALID_ARGUMENT");
   });

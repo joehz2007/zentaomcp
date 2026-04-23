@@ -65,6 +65,7 @@
 - FR-13：支持创建 Bug（写操作）。
 - FR-14：支持 Bug 指派/解决/关闭/激活动作（写操作）。
 - FR-17：支持需求附件列表与附件下载（会话鉴权，下载返回 base64）。
+- FR-18：支持任务附件列表与附件下载（会话鉴权，下载返回 base64）。
 - FR-11：支持统一错误模型（认证失败、权限不足、参数错误、上游超时、上游异常）。
 - FR-12：支持健康检查工具（禅道连通性、认证状态）。
 
@@ -76,7 +77,9 @@
 - `zentao_list_stories`
 - `zentao_get_story`
 - `zentao_list_story_attachments`
+- `zentao_list_task_attachments`
 - `zentao_download_attachment`
+- `zentao_download_task_attachment`
 - `zentao_list_tasks`
 - `zentao_get_task`
 - `zentao_create_task`

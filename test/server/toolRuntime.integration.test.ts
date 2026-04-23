@@ -84,11 +84,12 @@ describe("tool runtime integration", () => {
   it("lists attachment tools when enableAttachmentTools=true", () => {
     const context = buildContext({
       getStory: async () => ({ story: { id: 1, files: [] } }),
+      getTask: async () => ({ task: { id: 1, files: [] } }),
     });
     context.config.enableAttachmentTools = true;
     const registry = new ToolRegistry(context);
     const result = listToolsResult(registry);
-    assert.equal(result.tools.length, 12);
+    assert.equal(result.tools.length, 14);
   });
 
   it("runs call_tool for list_projects with filter and sort", async () => {
