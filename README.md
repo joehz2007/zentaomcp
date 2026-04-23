@@ -60,7 +60,7 @@ tool_timeout_sec = 60.0
 
 ## 功能
 - MCP Server（stdio）
-- 默认 12 个只读工具（推荐生产默认）：
+- 默认 14 个只读工具（推荐生产默认）：
   - `zentao_health_check`
   - `zentao_list_projects`
   - `zentao_get_project`
@@ -72,7 +72,9 @@ tool_timeout_sec = 60.0
   - `zentao_list_bugs`
   - `zentao_get_bug`
   - `zentao_list_story_attachments`
+  - `zentao_list_task_attachments`
   - `zentao_download_attachment`
+  - `zentao_download_task_attachment`
 - 可选开启写工具（共 12 个，需设置 `MCP_ENABLE_WRITE_TOOLS=true`）：
   - `zentao_create_task`
   - `zentao_update_task`
@@ -141,6 +143,6 @@ npm run test:e2e
 ```
 
 ## 说明
-- 当前版本默认只读（12 个工具，含附件查询/下载）；如需写操作可通过环境变量显式开启。
+- 当前版本默认只读（14 个工具，含需求/任务附件查询与下载）；如需写操作可通过环境变量显式开启。
 - 返回结果包含标准化字段映射，并保留 `raw` 原始响应用于排障。
 - 测试覆盖了参数校验、scope 路由和错误码映射等关键路径。

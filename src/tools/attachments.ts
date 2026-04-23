@@ -8,7 +8,7 @@ import {
   readPositiveInt,
 } from "./common.js";
 
-interface StoryAttachment {
+interface ZenTaoAttachment {
   id: number;
   title: string;
   extension?: string;
@@ -17,34 +17,84 @@ interface StoryAttachment {
   raw: Record<string, unknown>;
 }
 
-export function createAttachmentTools(context: ToolContext): ToolDefinition[] {
-  return [createListStoryAttachmentsTool(context), createDownloadAttachmentTool(context)];
+interface AttachmentTarget {
+  idField: "storyId" | "taskId";
+  idLabel: string;
+  detailKeys: string[];
+  listToolName: string;
+  listDescription: string;
+  listRequestPrefix: string;
+  listErrorMessage: string;
+  downloadToolName: string;
+  downloadDescription: string;
+  downloadRequestPrefix: string;
+  downloadErrorMessage: string;
+  loadPayload: (apiClient: ToolContext["apiClient"], id: number) => Promise<unknown>;
 }
 
-function createListStoryAttachmentsTool(context: ToolContext): ToolDefinition {
+const storyAttachmentTarget: AttachmentTarget = {
+  idField: "storyId",
+  idLabel: "需求",
+  detailKeys: ["story"],
+  listToolName: "zentao_list_story_attachments",
+  listDescription: "按需求 ID 查询附件列表（会话下载前置步骤）",
+  listRequestPrefix: "story_attachments",
+  listErrorMessage: "查询需求附件失败",
+  downloadToolName: "zentao_download_attachment",
+  downloadDescription: "下载需求附件（二进制内容会以 base64 返回）",
+  downloadRequestPrefix: "attachment_download",
+  downloadErrorMessage: "下载需求附件失败",
+  loadPayload: (apiClient, storyId) => apiClient.getStory(storyId),
+};
+
+const taskAttachmentTarget: AttachmentTarget = {
+  idField: "taskId",
+  idLabel: "任务",
+  detailKeys: ["task"],
+  listToolName: "zentao_list_task_attachments",
+  listDescription: "按任务 ID 查询附件列表（会话下载前置步骤）",
+  listRequestPrefix: "task_attachments",
+  listErrorMessage: "查询任务附件失败",
+  downloadToolName: "zentao_download_task_attachment",
+  downloadDescription: "下载任务附件（二进制内容会以 base64 返回）",
+  downloadRequestPrefix: "task_attachment_download",
+  downloadErrorMessage: "下载任务附件失败",
+  loadPayload: (apiClient, taskId) => apiClient.getTask(taskId),
+};
+
+export function createAttachmentTools(context: ToolContext): ToolDefinition[] {
+  return [
+    createListAttachmentsTool(context, storyAttachmentTarget),
+    createListAttachmentsTool(context, taskAttachmentTarget),
+    createDownloadAttachmentTool(context, storyAttachmentTarget),
+    createDownloadAttachmentTool(context, taskAttachmentTarget),
+  ];
+}
+
+function createListAttachmentsTool(context: ToolContext, target: AttachmentTarget): ToolDefinition {
   return {
-    name: "zentao_list_story_attachments",
-    description: "按需求 ID 查询附件列表（会话下载前置步骤）",
+    name: target.listToolName,
+    description: target.listDescription,
     inputSchema: {
       type: "object",
       properties: {
         ...authInputSchemaProperties,
-        storyId: { type: "integer", minimum: 1 },
+        [target.idField]: { type: "integer", minimum: 1 },
       },
-      required: ["storyId"],
+      required: [target.idField],
       additionalProperties: false,
     },
     handler: async (rawArgs) => {
-      const requestId = `story_attachments_${Date.now()}`;
+      const requestId = `${target.listRequestPrefix}_${Date.now()}`;
       const args = asRecord(rawArgs);
       try {
         const apiClient = context.getApiClientForArgs(args);
-        const storyId = readPositiveInt(args, "storyId", true);
-        const payload = await apiClient.getStory(storyId);
-        const attachments = extractStoryAttachments(payload);
+        const ownerId = readPositiveInt(args, target.idField, true);
+        const payload = await target.loadPayload(apiClient, ownerId);
+        const attachments = extractAttachments(payload, target.detailKeys);
         return okResult(
           {
-            storyId,
+            [target.idField]: ownerId,
             items: attachments.map((item) => ({
               id: item.id,
               title: item.title,
@@ -61,34 +111,34 @@ function createListStoryAttachmentsTool(context: ToolContext): ToolDefinition {
         if (error instanceof ZenTaoApiError) {
           return errResult(error.code, error.message, requestId, error.details);
         }
-        return errResult("UPSTREAM_ERROR", "查询需求附件失败", requestId, { reason: String(error) });
+        return errResult("UPSTREAM_ERROR", target.listErrorMessage, requestId, { reason: String(error) });
       }
     },
   };
 }
 
-function createDownloadAttachmentTool(context: ToolContext): ToolDefinition {
+function createDownloadAttachmentTool(context: ToolContext, target: AttachmentTarget): ToolDefinition {
   return {
-    name: "zentao_download_attachment",
-    description: "下载需求附件（二进制内容会以 base64 返回）",
+    name: target.downloadToolName,
+    description: target.downloadDescription,
     inputSchema: {
       type: "object",
       properties: {
         ...authInputSchemaProperties,
-        storyId: { type: "integer", minimum: 1 },
+        [target.idField]: { type: "integer", minimum: 1 },
         fileId: { type: "integer", minimum: 1 },
         maxBytes: { type: "integer", minimum: 1 },
       },
-      required: ["storyId", "fileId"],
+      required: [target.idField, "fileId"],
       additionalProperties: false,
     },
     handler: async (rawArgs) => {
-      const requestId = `attachment_download_${Date.now()}`;
+      const requestId = `${target.downloadRequestPrefix}_${Date.now()}`;
       const args = asRecord(rawArgs);
       try {
         const apiClient = context.getApiClientForArgs(args);
         const sessionClient = context.getSessionClientForArgs(args);
-        const storyId = readPositiveInt(args, "storyId", true);
+        const ownerId = readPositiveInt(args, target.idField, true);
         const fileId = readPositiveInt(args, "fileId", true);
         const maxBytes = readPositiveInt(
           args,
@@ -96,26 +146,26 @@ function createDownloadAttachmentTool(context: ToolContext): ToolDefinition {
           false,
           context.config.attachmentMaxBytes,
         );
-        const payload = await apiClient.getStory(storyId);
-        const attachments = extractStoryAttachments(payload);
-        const target = attachments.find((item) => item.id === fileId);
-        if (!target) {
-          throw new ZenTaoApiError("INVALID_ARGUMENT", `需求 ${storyId} 下未找到附件 ${fileId}`);
+        const payload = await target.loadPayload(apiClient, ownerId);
+        const attachments = extractAttachments(payload, target.detailKeys);
+        const attachment = attachments.find((item) => item.id === fileId);
+        if (!attachment) {
+          throw new ZenTaoApiError("INVALID_ARGUMENT", `${target.idLabel} ${ownerId} 下未找到附件 ${fileId}`);
         }
 
         const fallbackPath = ENDPOINTS.fileDownloadById(fileId);
-        const downloadPath = target.downloadPath ?? fallbackPath;
+        const downloadPath = attachment.downloadPath ?? fallbackPath;
         const downloadResult = await sessionClient.downloadBinary(downloadPath, maxBytes);
-        const filename = downloadResult.filename ?? buildFilename(target);
+        const filename = downloadResult.filename ?? buildFilename(attachment);
         const base64 = Buffer.from(downloadResult.content).toString("base64");
 
         return okResult(
           {
-            storyId,
+            [target.idField]: ownerId,
             fileId,
             filename,
-            title: target.title,
-            extension: target.extension,
+            title: attachment.title,
+            extension: attachment.extension,
             size: downloadResult.content.byteLength,
             contentType: downloadResult.contentType,
             sourcePath: downloadResult.sourcePath,
@@ -128,24 +178,24 @@ function createDownloadAttachmentTool(context: ToolContext): ToolDefinition {
         if (error instanceof ZenTaoApiError) {
           return errResult(error.code, error.message, requestId, error.details);
         }
-        return errResult("UPSTREAM_ERROR", "下载需求附件失败", requestId, { reason: String(error) });
+        return errResult("UPSTREAM_ERROR", target.downloadErrorMessage, requestId, { reason: String(error) });
       }
     },
   };
 }
 
-function buildFilename(attachment: StoryAttachment): string {
+function buildFilename(attachment: ZenTaoAttachment): string {
   const title = attachment.title.trim();
   if (title) return title;
   return `attachment_${attachment.id}`;
 }
 
-function extractStoryAttachments(payload: unknown): StoryAttachment[] {
-  const filesContainer = findFilesContainer(payload);
+function extractAttachments(payload: unknown, detailKeys: string[]): ZenTaoAttachment[] {
+  const filesContainer = findFilesContainer(payload, detailKeys);
   if (!filesContainer) return [];
   const records = toRecordArray(filesContainer);
 
-  const items: StoryAttachment[] = [];
+  const items: ZenTaoAttachment[] = [];
   for (const source of records) {
     const id = pickNumber(source, "id", "fileID", "fileId");
     if (!id || id <= 0) continue;
@@ -168,14 +218,16 @@ function extractStoryAttachments(payload: unknown): StoryAttachment[] {
   return items;
 }
 
-function findFilesContainer(payload: unknown): unknown {
+function findFilesContainer(payload: unknown, detailKeys: string[]): unknown {
   const root = asObject(payload);
   if (!root) return undefined;
 
   const data = asObject(root.data);
-  const story = asObject(root.story);
-  const dataStory = data ? asObject(data.story) : undefined;
-  const candidates = [dataStory, story, data, root];
+  const detailCandidates = detailKeys.flatMap((key) => [
+    data ? asObject(data[key]) : undefined,
+    asObject(root[key]),
+  ]);
+  const candidates = [...detailCandidates, data, root];
 
   for (const candidate of candidates) {
     if (!candidate) continue;

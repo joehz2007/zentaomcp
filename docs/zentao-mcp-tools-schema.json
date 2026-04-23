@@ -278,6 +278,50 @@
       "required": ["item", "raw"],
       "additionalProperties": false
     },
+    "attachmentListPayload": {
+      "type": "object",
+      "properties": {
+        "storyId": { "type": "integer" },
+        "taskId": { "type": "integer" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" },
+              "title": { "type": "string" },
+              "extension": { "type": "string" },
+              "size": { "type": "integer" },
+              "downloadPath": { "type": "string" }
+            },
+            "required": ["id", "title"],
+            "additionalProperties": true
+          }
+        },
+        "total": { "type": "integer" },
+        "raw": {}
+      },
+      "required": ["items", "total", "raw"],
+      "additionalProperties": false
+    },
+    "attachmentDownloadPayload": {
+      "type": "object",
+      "properties": {
+        "storyId": { "type": "integer" },
+        "taskId": { "type": "integer" },
+        "fileId": { "type": "integer" },
+        "filename": { "type": "string" },
+        "title": { "type": "string" },
+        "extension": { "type": "string" },
+        "size": { "type": "integer" },
+        "contentType": { "type": "string" },
+        "sourcePath": { "type": "string" },
+        "encoding": { "type": "string", "const": "base64" },
+        "contentBase64": { "type": "string" }
+      },
+      "required": ["fileId", "filename", "size", "sourcePath", "encoding", "contentBase64"],
+      "additionalProperties": false
+    },
     "healthPayload": {
       "type": "object",
       "properties": {
@@ -394,6 +438,28 @@
           "type": "object",
           "properties": {
             "data": { "$ref": "#/$defs/bugDetailPayload" }
+          }
+        }
+      ]
+    },
+    "attachmentListResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/attachmentListPayload" }
+          }
+        }
+      ]
+    },
+    "attachmentDownloadResult": {
+      "allOf": [
+        { "$ref": "#/$defs/standardResultBase" },
+        {
+          "type": "object",
+          "properties": {
+            "data": { "$ref": "#/$defs/attachmentDownloadPayload" }
           }
         }
       ]
@@ -561,6 +627,62 @@
         "additionalProperties": false
       },
       "outputSchema": { "$ref": "#/$defs/taskDetailResult" }
+    },
+    {
+      "name": "zentao_list_story_attachments",
+      "description": "按需求 ID 查询附件列表（会话下载前置步骤）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "storyId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["storyId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/attachmentListResult" }
+    },
+    {
+      "name": "zentao_list_task_attachments",
+      "description": "按任务 ID 查询附件列表（会话下载前置步骤）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["taskId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/attachmentListResult" }
+    },
+    {
+      "name": "zentao_download_attachment",
+      "description": "下载需求附件（二进制内容会以 base64 返回）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "storyId": { "type": "integer", "minimum": 1 },
+          "fileId": { "type": "integer", "minimum": 1 },
+          "maxBytes": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["storyId", "fileId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/attachmentDownloadResult" }
+    },
+    {
+      "name": "zentao_download_task_attachment",
+      "description": "下载任务附件（二进制内容会以 base64 返回）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "integer", "minimum": 1 },
+          "fileId": { "type": "integer", "minimum": 1 },
+          "maxBytes": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["taskId", "fileId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/attachmentDownloadResult" }
     },
     {
       "name": "zentao_create_task",
