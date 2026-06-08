@@ -146,7 +146,7 @@ function createListTasksTool(context: ToolContext): ToolDefinition {
 function createGetTaskTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_task",
-    description: "按任务 ID 获取任务详情",
+    description: "按任务 ID 获取任务详情；返回 data.raw 保留禅道原始字段，其中 raw.actions[] 包含任务备注/评论/历史动作，actions[].comment 常用于提取 PR 链接。",
     inputSchema: {
       type: "object",
       properties: {

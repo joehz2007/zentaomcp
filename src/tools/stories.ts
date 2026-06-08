@@ -99,7 +99,7 @@ function createListStoriesTool(context: ToolContext): ToolDefinition {
 function createGetStoryTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_story",
-    description: "按需求 ID 获取需求详情",
+    description: "按需求 ID 获取需求详情；返回 data.raw 保留禅道原始字段，其中 raw.actions[] 包含需求备注/评论/历史动作，actions[].comment 常用于提取 PR 链接或补充说明。",
     inputSchema: {
       type: "object",
       properties: {

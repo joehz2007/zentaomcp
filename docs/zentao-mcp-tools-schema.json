@@ -568,7 +568,7 @@
     },
     {
       "name": "zentao_get_story",
-      "description": "按需求 ID 获取需求详情",
+      "description": "按需求 ID 获取需求详情；data.raw.actions[] 包含需求备注/评论/历史动作，actions[].comment 可用于提取补充说明或 PR 链接。",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -617,7 +617,7 @@
     },
     {
       "name": "zentao_get_task",
-      "description": "按任务 ID 获取任务详情",
+      "description": "按任务 ID 获取任务详情；data.raw.actions[] 包含任务备注/评论/历史动作，actions[].comment 常用于提取 PR 链接。",
       "inputSchema": {
         "type": "object",
         "properties": {

@@ -145,4 +145,5 @@ npm run test:e2e
 ## 说明
 - 当前版本默认只读（14 个工具，含需求/任务附件查询与下载）；如需写操作可通过环境变量显式开启。
 - 返回结果包含标准化字段映射，并保留 `raw` 原始响应用于排障。
+- `zentao_get_task` / `zentao_get_story` 的 `data.raw.actions[]` 包含备注、评论和历史动作；PR 链接通常可从 `actions[].comment` 中提取。
 - 测试覆盖了参数校验、scope 路由和错误码映射等关键路径。
