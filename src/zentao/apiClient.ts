@@ -47,6 +47,7 @@ export type ActivateBugInput = {
 
 export type ResolveBugInput = {
   resolution: "fixed" | "bydesign" | "duplicate" | "external" | "notrepro" | "postponed" | "willnotfix";
+  resolvedBuild?: string;
   comment?: string;
   duplicateBug?: number;
   assignedTo?: string;

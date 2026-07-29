@@ -951,6 +951,10 @@
             "type": "string",
             "enum": ["fixed", "bydesign", "duplicate", "external", "notrepro", "postponed", "willnotfix"]
           },
+          "resolvedBuild": {
+            "type": "string",
+            "description": "解决版本，如 trunk 或禅道版本/构建名称"
+          },
           "comment": { "type": "string" },
           "duplicateBug": { "type": "integer", "minimum": 1 },
           "assignedTo": { "type": "string" },

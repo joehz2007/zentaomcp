@@ -32,7 +32,7 @@
 | `zentao_get_bug` | `/bugs/{bugId}` | `GET` | `bugId` | 获取 Bug 详情 |
 | `zentao_create_bug` | `/products/{productId}/bugs` | `POST` | `productId,title,severity,priority,type` | 创建 Bug（写操作） |
 | `zentao_assign_bug` | `/bugs/{bugId}/confirm` | `POST` | `bugId,assignedTo` | 指派 Bug（confirm 动作） |
-| `zentao_resolve_bug` | `/bugs/{bugId}/resolve` | `POST` | `bugId,resolution` | 解决 Bug |
+| `zentao_resolve_bug` | `/bugs/{bugId}/resolve` | `POST` | `bugId,resolution`；可选 `resolvedBuild,comment,duplicateBug,assignedTo,mailto` | 解决 Bug（`resolvedBuild` 为解决版本） |
 | `zentao_close_bug` | `/bugs/{bugId}/close` | `POST` | `bugId` | 关闭 Bug |
 | `zentao_activate_bug` | `/bugs/{bugId}/active` | `POST` | `bugId` | 激活（重新打开）Bug |
 

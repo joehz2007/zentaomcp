@@ -174,6 +174,7 @@ describe("bugs tool", () => {
     const resolveResult = await resolveTool.handler({
       bugId: 1,
       resolution: "duplicate",
+      resolvedBuild: "trunk",
       duplicateBug: 2,
       assignedTo: "alice",
       comment: "重复单",
@@ -196,6 +197,7 @@ describe("bugs tool", () => {
 
     assert.deepEqual(resolvePayload, {
       resolution: "duplicate",
+      resolvedBuild: "trunk",
       duplicateBug: 2,
       assignedTo: "alice",
       comment: "重复单",

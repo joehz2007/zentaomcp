@@ -145,7 +145,11 @@ describe("ZenTaoApiClient", () => {
       );
 
       await client.confirmBug(9, { assignedTo: "alice", comment: "处理一下" });
-      await client.resolveBug(9, { resolution: "fixed", comment: "已修复" });
+      await client.resolveBug(9, {
+        resolution: "fixed",
+        resolvedBuild: "trunk",
+        comment: "已修复",
+      });
       await client.closeBug(9, { comment: "已验收" });
       await client.activateBug(9, { assignedTo: "bob", comment: "复测失败" });
 
@@ -157,6 +161,14 @@ describe("ZenTaoApiClient", () => {
         "https://zentao.local/api.php/v1/bugs/9/active",
       ]);
       assert.deepEqual(fetchCalls.map((call) => call.init?.method), ["POST", "POST", "POST", "POST"]);
+      assert.equal(
+        fetchCalls[1]?.init?.body,
+        JSON.stringify({
+          resolution: "fixed",
+          resolvedBuild: "trunk",
+          comment: "已修复",
+        }),
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
