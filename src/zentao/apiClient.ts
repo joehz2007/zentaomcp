@@ -8,6 +8,7 @@ type QueryInput = PaginationInput & {
   keyword?: string;
   assignedTo?: string;
   severity?: string;
+  browse?: string;
 };
 
 export type CreateBugInput = {
@@ -129,6 +130,29 @@ export class ZenTaoApiClient {
     };
   }
 
+  async listProducts(query: QueryInput): Promise<unknown> {
+    const path = withQuery(ENDPOINTS.products, {
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+      q: query.keyword,
+    });
+    return this.get(path);
+  }
+
+  async getProduct(productId: number): Promise<unknown> {
+    return this.get(ENDPOINTS.productById(productId));
+  }
+
+  async listUsers(query: QueryInput): Promise<unknown> {
+    const path = withQuery(ENDPOINTS.users, {
+      page: query.page,
+      limit: query.limit,
+      browse: query.browse,
+    });
+    return this.get(path);
+  }
+
   async listProjects(query: QueryInput): Promise<unknown> {
     const path = withQuery(ENDPOINTS.projects, {
       page: query.page,
@@ -141,6 +165,17 @@ export class ZenTaoApiClient {
 
   async getProject(projectId: number): Promise<unknown> {
     return this.get(ENDPOINTS.projectById(projectId));
+  }
+
+  async listBuilds(executionId: number, query: QueryInput): Promise<unknown> {
+    const path = ENDPOINTS.buildsByExecution(executionId);
+    return this.get(
+      withQuery(path, {
+        page: query.page,
+        limit: query.limit,
+        q: query.keyword,
+      }),
+    );
   }
 
   async listStories(scope: "product" | "project", scopeId: number, query: QueryInput): Promise<unknown> {

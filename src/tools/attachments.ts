@@ -18,7 +18,7 @@ interface ZenTaoAttachment {
 }
 
 interface AttachmentTarget {
-  idField: "storyId" | "taskId";
+  idField: "storyId" | "taskId" | "bugId";
   idLabel: string;
   detailKeys: string[];
   listToolName: string;
@@ -62,12 +62,29 @@ const taskAttachmentTarget: AttachmentTarget = {
   loadPayload: (apiClient, taskId) => apiClient.getTask(taskId),
 };
 
+const bugAttachmentTarget: AttachmentTarget = {
+  idField: "bugId",
+  idLabel: "Bug",
+  detailKeys: ["bug"],
+  listToolName: "zentao_list_bug_attachments",
+  listDescription: "按 Bug ID 查询附件列表（会话下载前置步骤）",
+  listRequestPrefix: "bug_attachments",
+  listErrorMessage: "查询 Bug 附件失败",
+  downloadToolName: "zentao_download_bug_attachment",
+  downloadDescription: "下载 Bug 附件（二进制内容会以 base64 返回）",
+  downloadRequestPrefix: "bug_attachment_download",
+  downloadErrorMessage: "下载 Bug 附件失败",
+  loadPayload: (apiClient, bugId) => apiClient.getBug(bugId),
+};
+
 export function createAttachmentTools(context: ToolContext): ToolDefinition[] {
   return [
     createListAttachmentsTool(context, storyAttachmentTarget),
     createListAttachmentsTool(context, taskAttachmentTarget),
+    createListAttachmentsTool(context, bugAttachmentTarget),
     createDownloadAttachmentTool(context, storyAttachmentTarget),
     createDownloadAttachmentTool(context, taskAttachmentTarget),
+    createDownloadAttachmentTool(context, bugAttachmentTarget),
   ];
 }
 

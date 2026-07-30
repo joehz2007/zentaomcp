@@ -3,11 +3,14 @@ import type { ZenTaoApiClient } from "../zentao/apiClient.js";
 import type { ZenTaoSessionApiClient } from "../zentao/sessionApiClient.js";
 import { createAttachmentTools } from "../tools/attachments.js";
 import { createBugTools } from "../tools/bugs.js";
+import { createBuildTools } from "../tools/builds.js";
 import { createExecutionTools } from "../tools/executions.js";
 import { createHealthCheckTool } from "../tools/healthCheck.js";
+import { createProductTools } from "../tools/products.js";
 import { createProjectTools } from "../tools/projects.js";
 import { createStoryTools } from "../tools/stories.js";
 import { createTaskTools } from "../tools/tasks.js";
+import { createUserTools } from "../tools/users.js";
 import type { StandardResult } from "../domain/types.js";
 
 export interface ToolContext {
@@ -42,8 +45,11 @@ export class ToolRegistry {
       : [];
     const definitions = [
       createHealthCheckTool(context),
+      ...createProductTools(context),
       ...createProjectTools(context),
+      ...createUserTools(context),
       ...createExecutionTools(context),
+      ...createBuildTools(context),
       ...createStoryTools(context),
       ...attachmentTools,
       ...taskTools,

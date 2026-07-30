@@ -40,6 +40,22 @@ function buildContext(overrides?: {
         },
       },
     }),
+    getBug: async () => ({
+      data: {
+        bug: {
+          id: 66,
+          files: [
+            {
+              id: 903,
+              title: "repro.png",
+              extension: "png",
+              size: 512,
+              downloadUrl: "/file-download-903.html",
+            },
+          ],
+        },
+      },
+    }),
     ...(overrides?.apiClient ?? {}),
   } as unknown as ToolContext["apiClient"];
 
@@ -180,6 +196,51 @@ describe("attachments tool", () => {
     assert.equal(payload.filename, "execution-log.txt");
     assert.equal(payload.contentBase64, "BAUG");
     assert.equal(payload.size, 3);
+  });
+
+  it("lists bug attachments", async () => {
+    const context = buildContext();
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_list_bug_attachments");
+    assert.ok(tool);
+
+    const result = await tool.handler({ bugId: 66 });
+    assert.equal(result.ok, true);
+    const payload = result.data as { items: Array<{ id: number; title: string; extension?: string }> };
+    assert.equal(payload.items.length, 1);
+    assert.deepEqual(payload.items[0], {
+      id: 903,
+      title: "repro.png",
+      extension: "png",
+      size: 512,
+      downloadPath: "/file-download-903.html",
+    });
+  });
+
+  it("downloads bug attachment as base64", async () => {
+    let capturedPath = "";
+    const context = buildContext({
+      sessionClient: {
+        downloadBinary: async (path: string) => {
+          capturedPath = path;
+          return {
+            sourcePath: path,
+            content: new Uint8Array([7, 8]),
+            contentType: "image/png",
+            filename: "repro.png",
+          };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_bug_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ bugId: 66, fileId: 903 });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/file-download-903.html");
+    const payload = result.data as { bugId: number; filename: string; contentBase64: string };
+    assert.equal(payload.bugId, 66);
+    assert.equal(payload.filename, "repro.png");
+    assert.equal(payload.contentBase64, "Bwg=");
   });
 
   it("keeps title extension when session filename is missing", async () => {

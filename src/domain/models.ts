@@ -7,6 +7,37 @@ export interface StandardProject {
   owner?: string;
 }
 
+export interface StandardProduct {
+  id: number;
+  name: string;
+  code?: string;
+  status?: string;
+  type?: string;
+  owner?: string;
+  qd?: string;
+  rd?: string;
+}
+
+export interface StandardUser {
+  id: number;
+  account: string;
+  realname?: string;
+  role?: string;
+  email?: string;
+  dept?: number;
+}
+
+export interface StandardBuild {
+  id: number;
+  name: string;
+  date?: string;
+  builder?: string;
+  productId?: number;
+  projectId?: number;
+  executionId?: number;
+  desc?: string;
+}
+
 export interface StandardStory {
   id: number;
   title: string;
@@ -37,6 +68,13 @@ export interface StandardBug {
   openedBy?: string;
   assignedTo?: string;
   resolvedBy?: string;
+  productId?: number;
+  projectId?: number;
+  moduleId?: number;
+  type?: string;
+  resolution?: string;
+  resolvedBuild?: string;
+  steps?: string;
 }
 
 export interface StandardExecution {

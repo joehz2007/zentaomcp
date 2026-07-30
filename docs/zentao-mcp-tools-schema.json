@@ -147,9 +147,59 @@
         "priority": { "type": "string" },
         "openedBy": { "type": "string" },
         "assignedTo": { "type": "string" },
-        "resolvedBy": { "type": "string" }
+        "resolvedBy": { "type": "string" },
+        "productId": { "type": "integer" },
+        "projectId": { "type": "integer" },
+        "moduleId": { "type": "integer" },
+        "type": { "type": "string" },
+        "resolution": { "type": "string" },
+        "resolvedBuild": { "type": "string" },
+        "steps": { "type": "string" }
       },
       "required": ["id", "title"],
+      "additionalProperties": true
+    },
+    "standardProduct": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "status": { "type": "string" },
+        "type": { "type": "string" },
+        "owner": { "type": "string" },
+        "qd": { "type": "string" },
+        "rd": { "type": "string" }
+      },
+      "required": ["id", "name"],
+      "additionalProperties": true
+    },
+    "standardUser": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "account": { "type": "string" },
+        "realname": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string" },
+        "dept": { "type": "integer" }
+      },
+      "required": ["id", "account"],
+      "additionalProperties": true
+    },
+    "standardBuild": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string" },
+        "date": { "type": "string" },
+        "builder": { "type": "string" },
+        "productId": { "type": "integer" },
+        "projectId": { "type": "integer" },
+        "executionId": { "type": "integer" },
+        "desc": { "type": "string" }
+      },
+      "required": ["id", "name"],
       "additionalProperties": true
     },
     "projectListPayload": {
@@ -479,6 +529,86 @@
       "outputSchema": { "$ref": "#/$defs/healthResult" }
     },
     {
+      "name": "zentao_list_products",
+      "description": "查询产品列表（支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": ["id", "name", "status", "code", "owner"]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/baseResult" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/standardProduct" }
+                  },
+                  "total": { "type": "integer" },
+                  "filteredTotal": { "type": "integer" },
+                  "raw": {}
+                },
+                "required": ["items", "total", "filteredTotal", "raw"]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "zentao_get_product",
+      "description": "按产品 ID 获取产品详情",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "productId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["productId"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/baseResult" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "properties": {
+                  "item": {
+                    "anyOf": [
+                      { "$ref": "#/$defs/standardProduct" },
+                      { "type": "null" }
+                    ]
+                  },
+                  "raw": {}
+                },
+                "required": ["item", "raw"]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "zentao_list_projects",
       "description": "查询项目列表（支持二次过滤、排序）",
       "inputSchema": {
@@ -515,6 +645,51 @@
       "outputSchema": { "$ref": "#/$defs/projectDetailResult" }
     },
     {
+      "name": "zentao_list_users",
+      "description": "查询用户列表（支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "browse": { "type": "string" },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": ["id", "account", "realname", "role"]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/baseResult" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/standardUser" }
+                  },
+                  "total": { "type": "integer" },
+                  "filteredTotal": { "type": "integer" },
+                  "raw": {}
+                },
+                "required": ["items", "total", "filteredTotal", "raw"]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "zentao_list_executions",
       "description": "按项目查询执行列表（支持二次过滤、排序）",
       "inputSchema": {
@@ -538,6 +713,52 @@
         ]
       },
       "outputSchema": { "$ref": "#/$defs/executionListResult" }
+    },
+    {
+      "name": "zentao_list_builds",
+      "description": "按执行 ID 查询版本/构建列表（支持二次过滤、排序）",
+      "inputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/paginationInput" },
+          { "$ref": "#/$defs/sortOrderInput" },
+          {
+            "type": "object",
+            "properties": {
+              "executionId": { "type": "integer", "minimum": 1 },
+              "keyword": { "type": "string" },
+              "sortBy": {
+                "type": "string",
+                "enum": ["id", "name", "date", "builder", "productId", "projectId", "executionId"]
+              }
+            },
+            "required": ["executionId"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "outputSchema": {
+        "allOf": [
+          { "$ref": "#/$defs/baseResult" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/standardBuild" }
+                  },
+                  "total": { "type": "integer" },
+                  "filteredTotal": { "type": "integer" },
+                  "raw": {}
+                },
+                "required": ["items", "total", "filteredTotal", "raw"]
+              }
+            }
+          }
+        ]
+      }
     },
     {
       "name": "zentao_list_stories",
@@ -680,6 +901,34 @@
           "maxBytes": { "type": "integer", "minimum": 1 }
         },
         "required": ["taskId", "fileId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/attachmentDownloadResult" }
+    },
+    {
+      "name": "zentao_list_bug_attachments",
+      "description": "按 Bug ID 查询附件列表（会话下载前置步骤）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["bugId"],
+        "additionalProperties": false
+      },
+      "outputSchema": { "$ref": "#/$defs/attachmentListResult" }
+    },
+    {
+      "name": "zentao_download_bug_attachment",
+      "description": "下载 Bug 附件（二进制内容会以 base64 返回）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bugId": { "type": "integer", "minimum": 1 },
+          "fileId": { "type": "integer", "minimum": 1 },
+          "maxBytes": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["bugId", "fileId"],
         "additionalProperties": false
       },
       "outputSchema": { "$ref": "#/$defs/attachmentDownloadResult" }
@@ -847,7 +1096,7 @@
     },
     {
       "name": "zentao_get_bug",
-      "description": "按 Bug ID 获取 Bug 详情",
+      "description": "按 Bug ID 获取 Bug 详情；data.raw.actions[] 包含备注/历史动作，actions[].comment 常可用于提取 MR/补充说明",
       "inputSchema": {
         "type": "object",
         "properties": {

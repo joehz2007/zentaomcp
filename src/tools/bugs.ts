@@ -122,7 +122,8 @@ function createListBugsTool(context: ToolContext): ToolDefinition {
 function createGetBugTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_bug",
-    description: "按 Bug ID 获取 Bug 详情",
+    description:
+      "按 Bug ID 获取 Bug 详情；data.raw.actions[] 包含备注/历史动作，actions[].comment 常可用于提取 MR/补充说明",
     inputSchema: {
       type: "object",
       properties: {

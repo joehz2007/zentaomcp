@@ -60,11 +60,15 @@ tool_timeout_sec = 60.0
 
 ## 功能
 - MCP Server（stdio）
-- 默认 14 个只读工具（推荐生产默认）：
+- 默认 20 个只读工具（推荐生产默认；含附件工具）：
   - `zentao_health_check`
+  - `zentao_list_products`
+  - `zentao_get_product`
   - `zentao_list_projects`
   - `zentao_get_project`
+  - `zentao_list_users`
   - `zentao_list_executions`
+  - `zentao_list_builds`
   - `zentao_list_stories`
   - `zentao_get_story`
   - `zentao_list_tasks`
@@ -73,8 +77,10 @@ tool_timeout_sec = 60.0
   - `zentao_get_bug`
   - `zentao_list_story_attachments`
   - `zentao_list_task_attachments`
+  - `zentao_list_bug_attachments`
   - `zentao_download_attachment`
   - `zentao_download_task_attachment`
+  - `zentao_download_bug_attachment`
 - 可选开启写工具（共 12 个，需设置 `MCP_ENABLE_WRITE_TOOLS=true`）：
   - `zentao_create_task`
   - `zentao_update_task`
