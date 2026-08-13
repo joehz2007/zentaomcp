@@ -60,42 +60,31 @@ tool_timeout_sec = 60.0
 
 ## 功能
 - MCP Server（stdio）
-- 默认 20 个只读工具（推荐生产默认；含附件工具）：
+- 默认 14 个只读工具（不含附件时）；开启附件后 20 个（list/download）：
   - `zentao_health_check`
-  - `zentao_list_products`
-  - `zentao_get_product`
-  - `zentao_list_projects`
-  - `zentao_get_project`
+  - `zentao_list_products` / `zentao_get_product`
+  - `zentao_list_projects` / `zentao_get_project`
   - `zentao_list_users`
   - `zentao_list_executions`
   - `zentao_list_builds`
-  - `zentao_list_stories`
-  - `zentao_get_story`
-  - `zentao_list_tasks`
-  - `zentao_get_task`
-  - `zentao_list_bugs`
-  - `zentao_get_bug`
-  - `zentao_list_story_attachments`
-  - `zentao_list_task_attachments`
-  - `zentao_list_bug_attachments`
-  - `zentao_download_attachment`
-  - `zentao_download_task_attachment`
-  - `zentao_download_bug_attachment`
-- 可选开启写工具（共 12 个，需设置 `MCP_ENABLE_WRITE_TOOLS=true`）：
-  - `zentao_create_task`
-  - `zentao_update_task`
-  - `zentao_start_task`
-  - `zentao_pause_task`
-  - `zentao_restart_task`
-  - `zentao_finish_task`
+  - `zentao_list_stories` / `zentao_get_story`
+  - `zentao_list_tasks` / `zentao_get_task`
+  - `zentao_list_bugs` / `zentao_get_bug`
+  - `zentao_list_story_attachments` / `zentao_download_attachment`
+  - `zentao_list_task_attachments` / `zentao_download_task_attachment`
+  - `zentao_list_bug_attachments` / `zentao_download_bug_attachment`
+- 可选开启写工具（`MCP_ENABLE_WRITE_TOOLS=true`，+15；含 create_story / task 生命周期 / bug / 记工）：
+  - `zentao_create_story`
+  - `zentao_create_task`（可选 `estStarted` / `deadline`）
+  - `zentao_update_task` / `zentao_start_task` / `zentao_pause_task` / `zentao_restart_task`
+  - `zentao_finish_task`（可选 `finishedDate` / `realStarted` / `currentConsumed`，`left` 默认 0；勿与 start 重复叠加工时）
   - `zentao_close_task`
-  - `zentao_create_bug`
-  - `zentao_assign_bug`
-  - `zentao_resolve_bug`
-  - `zentao_close_bug`
-  - `zentao_activate_bug`
+  - `zentao_record_task_effort` / `zentao_delete_task_effort`
+  - `zentao_create_bug` / `zentao_assign_bug` / `zentao_resolve_bug` / `zentao_close_bug` / `zentao_activate_bug`
+- 写工具 + 附件同时开启时额外注册上传（+2，全开约 37）：
+  - `zentao_upload_task_attachment` / `zentao_upload_story_attachment`（会话 edit multipart，不依赖 `api.php/v2/files`）
 - `ZenTaoAuthClient`（Token 获取与缓存）
-- `ZenTaoApiClient`（端点封装、鉴权重试、错误映射）
+- `ZenTaoApiClient` / `ZenTaoSessionApiClient`（REST + 会话鉴权）
 
 ## 发布与分发
 - 本地打包：`npm run pack:local`（会产出 `.tgz`）
@@ -113,11 +102,11 @@ tool_timeout_sec = 60.0
 - `MCP_DEFAULT_PAGE`（默认 `1`）
 - `MCP_DEFAULT_LIMIT`（默认 `20`）
 - `MCP_MAX_LIMIT`（默认 `100`）
-- `MCP_ENABLE_WRITE_TOOLS`（默认 `false`，设为 `true` 时注册 Task/Bug 写操作工具）
+- `MCP_ENABLE_WRITE_TOOLS`（默认 `false`，设为 `true` 时注册 Story/Task/Bug 写操作与记工工具）
 - `MCP_ENABLE_ATTACHMENT_TOOLS`（默认 `true`，设为 `false` 时关闭附件查询/下载工具）
 - `MCP_ATTACHMENT_MAX_BYTES`（默认 `5242880`，附件下载最大字节数）
 - `ZENTAO_E2E`（默认 `0`，设为 `1` 才执行真实禅道沙箱 E2E）
-- `ZENTAO_E2E_PRODUCT_ID`（E2E 创建 Bug 使用的产品 ID）
+- `ZENTAO_E2E_PRODUCT_ID`（E2E 创建 Bug/Story 使用的产品 ID）
 - `ZENTAO_E2E_EXECUTION_ID`（E2E 创建 Task 使用的执行 ID）
 - `ZENTAO_E2E_ASSIGNED_TO`（可选，开启生命周期动作时用于指派）
 - `ZENTAO_E2E_BUG_LIFECYCLE`（默认 `0`，设为 `1` 运行 Bug assign/resolve/close/activate）
@@ -149,7 +138,7 @@ npm run test:e2e
 ```
 
 ## 说明
-- 当前版本默认只读（14 个工具，含需求/任务附件查询与下载）；如需写操作可通过环境变量显式开启。
+- 当前版本默认只读；写操作与上传需环境变量显式开启。
 - 返回结果包含标准化字段映射，并保留 `raw` 原始响应用于排障。
 - `zentao_get_task` / `zentao_get_story` 的 `data.raw.actions[]` 包含备注、评论和历史动作；PR 链接通常可从 `actions[].comment` 中提取。
 - 测试覆盖了参数校验、scope 路由和错误码映射等关键路径。

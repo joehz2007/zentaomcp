@@ -34,14 +34,20 @@ export class ToolRegistry {
   constructor(context: ToolContext) {
     const readOnlyTaskTools = new Set(["zentao_list_tasks", "zentao_get_task"]);
     const readOnlyBugTools = new Set(["zentao_list_bugs", "zentao_get_bug"]);
+    const readOnlyStoryTools = new Set(["zentao_list_stories", "zentao_get_story"]);
     const taskTools = createTaskTools(context).filter(
       (tool) => context.config.enableWriteTools || readOnlyTaskTools.has(tool.name),
     );
     const bugTools = createBugTools(context).filter(
       (tool) => context.config.enableWriteTools || readOnlyBugTools.has(tool.name),
     );
+    const storyTools = createStoryTools(context).filter(
+      (tool) => context.config.enableWriteTools || readOnlyStoryTools.has(tool.name),
+    );
     const attachmentTools = context.config.enableAttachmentTools
-      ? createAttachmentTools(context)
+      ? createAttachmentTools(context, {
+          enableUpload: context.config.enableWriteTools,
+        })
       : [];
     const definitions = [
       createHealthCheckTool(context),
@@ -50,7 +56,7 @@ export class ToolRegistry {
       ...createUserTools(context),
       ...createExecutionTools(context),
       ...createBuildTools(context),
-      ...createStoryTools(context),
+      ...storyTools,
       ...attachmentTools,
       ...taskTools,
       ...bugTools,

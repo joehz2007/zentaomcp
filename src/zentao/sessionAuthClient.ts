@@ -159,6 +159,10 @@ function firstCookiePair(headers: Headers): string | undefined {
       ? getSetCookie.getSetCookie()
       : [headers.get("set-cookie")].filter((item): item is string => Boolean(item));
   if (cookies.length === 0) return undefined;
-  const first = cookies[0]?.split(";")[0]?.trim();
-  return first || undefined;
+  const pairs = cookies
+    .map((item) => item.split(";")[0]?.trim())
+    .filter((item): item is string => Boolean(item));
+  if (pairs.length === 0) return undefined;
+  // 合并全部 Set-Cookie，避免只留第一个导致后续会话接口报登录超时
+  return pairs.join("; ");
 }

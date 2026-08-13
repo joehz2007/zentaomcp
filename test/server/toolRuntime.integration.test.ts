@@ -33,6 +33,7 @@ function buildContext(
     resolveBug: async () => ({ bug: { id: 1 } }),
     closeBug: async () => ({ bug: { id: 1 } }),
     activateBug: async () => ({ bug: { id: 1 } }),
+    createStory: async () => ({ story: { id: 1 } }),
   };
 
   const apiClient = { ...baseApiClient, ...(overrides ?? {}) } as unknown as ToolContext["apiClient"];
@@ -82,7 +83,7 @@ describe("tool runtime integration", () => {
     context.config.enableWriteTools = true;
     const registry = new ToolRegistry(context);
     const result = listToolsResult(registry);
-    assert.equal(result.tools.length, 26);
+    assert.equal(result.tools.length, 29);
   });
 
   it("lists attachment tools when enableAttachmentTools=true", () => {
@@ -95,6 +96,20 @@ describe("tool runtime integration", () => {
     const registry = new ToolRegistry(context);
     const result = listToolsResult(registry);
     assert.equal(result.tools.length, 20);
+  });
+
+  it("lists upload tools when write and attachment both enabled", () => {
+    const context = buildContext();
+    context.config.enableWriteTools = true;
+    context.config.enableAttachmentTools = true;
+    const registry = new ToolRegistry(context);
+    const names = listToolsResult(registry).tools.map((tool) => tool.name);
+    assert.equal(names.length, 37);
+    assert.ok(names.includes("zentao_create_story"));
+    assert.ok(names.includes("zentao_upload_task_attachment"));
+    assert.ok(names.includes("zentao_upload_story_attachment"));
+    assert.ok(names.includes("zentao_record_task_effort"));
+    assert.ok(names.includes("zentao_delete_task_effort"));
   });
 
   it("runs call_tool for list_projects with filter and sort", async () => {

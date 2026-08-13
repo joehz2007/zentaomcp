@@ -137,21 +137,25 @@ describe("tasks tool", () => {
     assert.ok(tool);
 
     const result = await tool.handler({
-      executionId: 10,
+      executionId: 1565,
       name: "支付联调",
       type: "devel",
       priority: 2,
       estimate: 8,
       assignedTo: "alice",
+      estStarted: "2026-08-13",
+      story: 7453,
     });
     assert.equal(result.ok, true);
-    assert.equal(capturedExecutionId, 10);
+    assert.equal(capturedExecutionId, 1565);
     assert.deepEqual(capturedPayload, {
       name: "支付联调",
       type: "devel",
       pri: 2,
       estimate: 8,
       assignedTo: "alice",
+      estStarted: "2026-08-13",
+      story: 7453,
     });
   });
 
@@ -207,13 +211,71 @@ describe("tasks tool", () => {
     assert.equal((await startTool.handler({ taskId: 1, consumed: 1.5, comment: "开始" })).ok, true);
     assert.equal((await pauseTool.handler({ taskId: 1, comment: "暂停" })).ok, true);
     assert.equal((await restartTool.handler({ taskId: 1, comment: "继续" })).ok, true);
-    assert.equal((await finishTool.handler({ taskId: 1, consumed: 3, left: 0, comment: "完成" })).ok, true);
+    assert.equal(
+      (
+        await finishTool.handler({
+          taskId: 1,
+          consumed: 16,
+          currentConsumed: 16,
+          finishedDate: "2026-08-13",
+          realStarted: "2026-08-13",
+          comment: "完成",
+        })
+      ).ok,
+      true,
+    );
     assert.equal((await closeTool.handler({ taskId: 1, comment: "关闭" })).ok, true);
 
     assert.deepEqual(startPayload, { consumed: 1.5, comment: "开始" });
     assert.deepEqual(pausePayload, { comment: "暂停" });
     assert.deepEqual(restartPayload, { comment: "继续" });
-    assert.deepEqual(finishPayload, { consumed: 3, left: 0, comment: "完成" });
+    assert.deepEqual(finishPayload, {
+      consumed: 16,
+      left: 0,
+      currentConsumed: 16,
+      finishedDate: "2026-08-13",
+      realStarted: "2026-08-13",
+      comment: "完成",
+    });
     assert.deepEqual(closePayload, { comment: "关闭" });
+  });
+
+  it("records task effort via session form fields", async () => {
+    let capturedPath = "";
+    let capturedFields: Record<string, unknown> | undefined;
+    const context = buildContext();
+    (context as { sessionClient: ToolContext["sessionClient"] }).sessionClient = {
+      downloadBinary: async () => ({
+        sourcePath: "/x",
+        content: new Uint8Array([1]),
+      }),
+      postFormUrlEncoded: async (path: string, fields: Record<string, unknown>) => {
+        capturedPath = path;
+        capturedFields = fields;
+        return { path, status: 200, payload: { result: "success" } };
+      },
+      getSession: async () => ({ path: "/", status: 200, payload: {} }),
+      postMultipart: async () => ({ path: "/", status: 200, payload: {} }),
+    } as unknown as ToolContext["sessionClient"];
+    context.getSessionClientForArgs = () => context.sessionClient;
+
+    const tool = createTaskTools(context).find((item) => item.name === "zentao_record_task_effort");
+    assert.ok(tool);
+    const result = await tool.handler({
+      taskId: 36483,
+      date: "2026-08-13",
+      consumed: 16,
+      left: 0,
+      work: "校准",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/task-recordEstimate-36483.json");
+    assert.deepEqual(capturedFields, {
+      "id[0]": "",
+      "dates[0]": "2026-08-13",
+      "consumed[0]": 16,
+      "left[0]": 0,
+      "work[0]": "校准",
+    });
   });
 });

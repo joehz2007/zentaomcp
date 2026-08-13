@@ -66,6 +66,10 @@
 - FR-14：支持 Bug 指派/解决/关闭/激活动作（写操作）。
 - FR-17：支持需求附件列表与附件下载（会话鉴权，下载返回 base64）。
 - FR-18：支持任务附件列表与附件下载（会话鉴权，下载返回 base64）。
+- FR-19：支持创建需求（`zentao_create_story`；`reviewer` 为 string[]，`branch` 为数字）。
+- FR-20：创建/完成任务支持本环境必填字段（`estStarted` / `finishedDate` / `currentConsumed`，注意工时勿叠加）。
+- FR-21：支持会话上传任务/需求附件（edit multipart `files[]`，不依赖 `api.php/v2/files`；提交前回填关键字段）。
+- FR-22：支持任务记工与删除工时（会话 `recordEstimate` / `deleteEstimate-yes`）。
 - FR-11：支持统一错误模型（认证失败、权限不足、参数错误、上游超时、上游异常）。
 - FR-12：支持健康检查工具（禅道连通性、认证状态）。
 

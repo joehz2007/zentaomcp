@@ -19,21 +19,26 @@
 | `zentao_list_builds` | `/executions/{executionId}/builds` | `GET` | `executionId` | 获取执行下版本列表；用于 `resolvedBuild` |
 | `zentao_list_stories` | `/products/{scopeId}/stories` 或 `/projects/{scopeId}/stories` | `GET` | `scope,scopeId` | `scope in [product,project]` |
 | `zentao_get_story` | `/stories/{storyId}` | `GET` | `storyId` | 获取需求详情；`data.raw.actions[]` 包含需求备注/评论/历史动作，`actions[].comment` 可用于提取补充说明或 PR 链接 |
+| `zentao_create_story` | `/products/{productId}/stories` | `POST` | `productId,title,spec,reviewer[]` | 创建需求；`reviewer` 必须为数组；`branch` 数字默认 0 |
 | `zentao_list_story_attachments` | `/stories/{storyId}` | `GET` | `storyId` | 从需求详情中提取附件列表 |
 | `zentao_download_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/file-download-{fileId}.html` | `GET/POST/GET` | `storyId,fileId` | 会话鉴权下载附件，返回 base64 |
+| `zentao_upload_story_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/story-edit-{storyId}.json` | `GET/POST/POST` | `storyId,filePath` | 会话 multipart `files[]`；先 get 回填 title/spec 等；可选 comment。不依赖 v2/files |
 | `zentao_list_tasks` | `/executions/{scopeId}/tasks` 或 `/projects/{scopeId}/tasks` | `GET` | `scope,scopeId` | `scope in [execution,project]` |
 | `zentao_get_task` | `/tasks/{taskId}` | `GET` | `taskId` | 获取任务详情；`data.raw.actions[]` 包含任务备注/评论/历史动作，`actions[].comment` 常用于提取 PR 链接 |
 | `zentao_list_task_attachments` | `/tasks/{taskId}` | `GET` | `taskId` | 从任务详情中提取附件列表 |
 | `zentao_download_task_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/file-download-{fileId}.html` | `GET/POST/GET` | `taskId,fileId` | 会话鉴权下载任务附件，返回 base64 |
+| `zentao_upload_task_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/task-edit-{taskId}.json` | `GET/POST/POST` | `taskId,filePath` | 会话 multipart `files[]`；先 get 回填 name/type/estimate/story 等。不依赖 v2/files |
 | `zentao_list_bug_attachments` | `/bugs/{bugId}` | `GET` | `bugId` | 从 Bug 详情中提取附件列表 |
 | `zentao_download_bug_attachment` | `/api-getsessionid.json` + `/user-login.json` + `/file-download-{fileId}.html` | `GET/POST/GET` | `bugId,fileId` | 会话鉴权下载 Bug 附件，返回 base64 |
-| `zentao_create_task` | `/executions/{executionId}/tasks` | `POST` | `executionId,name,type` | 创建任务（写操作） |
+| `zentao_create_task` | `/executions/{executionId}/tasks` | `POST` | `executionId,name,type`；可选 `estStarted,deadline` | 创建任务；本环境常需 `estStarted`、`deadline`（YYYY-MM-DD） |
 | `zentao_update_task` | `/tasks/{taskId}` | `PUT` | `taskId` | 更新任务（写操作） |
 | `zentao_start_task` | `/tasks/{taskId}/start` | `POST` | `taskId,consumed` | 开始任务 |
 | `zentao_pause_task` | `/tasks/{taskId}/pause` | `POST` | `taskId` | 暂停任务 |
 | `zentao_restart_task` | `/tasks/{taskId}/restart` | `POST` | `taskId` | 重启任务 |
-| `zentao_finish_task` | `/tasks/{taskId}/finish` | `POST` | `taskId,consumed` | 完成任务 |
+| `zentao_finish_task` | `/tasks/{taskId}/finish` | `POST` | `taskId,consumed`；可选 `finishedDate,realStarted,currentConsumed`；`left` 默认 0 | 本环境常需 `finishedDate`+`realStarted`；已 start 记工勿叠加大额 consumed/currentConsumed |
 | `zentao_close_task` | `/tasks/{taskId}/close` | `POST` | `taskId` | 关闭任务 |
+| `zentao_record_task_effort` | `/task-recordEstimate-{taskId}.json` | `POST` | `taskId,date,consumed,left` | 会话记工（表单 id/dates/consumed/left/work） |
+| `zentao_delete_task_effort` | `/task-deleteEstimate-{effortId}-yes.html` | `GET` | `effortId` | 会话删除工时；异常后可再 record 校准 |
 | `zentao_list_bugs` | `/products/{scopeId}/bugs` 或 `/projects/{scopeId}/bugs` | `GET` | `scope,scopeId` | `scope in [product,project]` |
 | `zentao_get_bug` | `/bugs/{bugId}` | `GET` | `bugId` | 获取 Bug 详情；`data.raw.actions[]` 含备注/历史，`actions[].comment` 可提取 MR |
 | `zentao_create_bug` | `/products/{productId}/bugs` | `POST` | `productId,title,severity,priority,type` | 创建 Bug（写操作） |

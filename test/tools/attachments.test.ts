@@ -320,4 +320,93 @@ describe("attachments tool", () => {
     assert.equal(result.ok, false);
     assert.equal(result.error?.code, "INVALID_ARGUMENT");
   });
+
+  it("uploads task attachment with preserved edit fields", async () => {
+    let capturedPath = "";
+    let capturedFields: Record<string, unknown> | undefined;
+    let capturedFilePath = "";
+    const context = buildContext({
+      apiClient: {
+        getTask: async () => ({
+          task: {
+            id: 88,
+            name: "开发任务",
+            type: "devel",
+            pri: 2,
+            estimate: 16,
+            story: 7453,
+            assignedTo: { account: "moomesy.liang" },
+            desc: "keep me",
+          },
+        }),
+      },
+      sessionClient: {
+        postMultipart: async (path: string, fields: Record<string, unknown>, file: { filePath: string }) => {
+          capturedPath = path;
+          capturedFields = fields;
+          capturedFilePath = file.filePath;
+          return { path, status: 200, payload: { result: "success" } };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context, { enableUpload: true }).find(
+      (item) => item.name === "zentao_upload_task_attachment",
+    );
+    assert.ok(tool);
+
+    const result = await tool.handler({
+      taskId: 88,
+      filePath: "/tmp/ai-efficiency-test.zip",
+      comment: "test 包",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/task-edit-88.json");
+    assert.equal(capturedFilePath, "/tmp/ai-efficiency-test.zip");
+    assert.equal(capturedFields?.name, "开发任务");
+    assert.equal(capturedFields?.estimate, 16);
+    assert.equal(capturedFields?.story, 7453);
+    assert.equal(capturedFields?.assignedTo, "moomesy.liang");
+    assert.equal(capturedFields?.comment, "test 包");
+  });
+
+  it("uploads story attachment with preserved edit fields", async () => {
+    let capturedPath = "";
+    let capturedFields: Record<string, unknown> | undefined;
+    const context = buildContext({
+      apiClient: {
+        getStory: async () => ({
+          story: {
+            id: 7453,
+            title: "AI提效需求",
+            spec: "keep spec",
+            pri: 2,
+            branch: 0,
+            assignedTo: "moomesy.liang",
+          },
+        }),
+      },
+      sessionClient: {
+        postMultipart: async (path: string, fields: Record<string, unknown>) => {
+          capturedPath = path;
+          capturedFields = fields;
+          return { path, status: 200, payload: { result: "success" } };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context, { enableUpload: true }).find(
+      (item) => item.name === "zentao_upload_story_attachment",
+    );
+    assert.ok(tool);
+
+    const result = await tool.handler({
+      storyId: 7453,
+      filePath: "/tmp/ai-efficiency-test.zip",
+      comment: "test 包说明",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/story-edit-7453.json");
+    assert.equal(capturedFields?.title, "AI提效需求");
+    assert.equal(capturedFields?.spec, "keep spec");
+    assert.equal(capturedFields?.comment, "test 包说明");
+  });
 });

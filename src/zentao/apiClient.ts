@@ -55,6 +55,21 @@ export type ResolveBugInput = {
   mailto?: string[];
 };
 
+export type CreateStoryInput = {
+  title: string;
+  spec: string;
+  reviewer: string[];
+  verify?: string;
+  pri?: number;
+  category?: string;
+  source?: string;
+  sourceNote?: string;
+  keywords?: string;
+  module?: number;
+  branch?: number;
+  assignedTo?: string;
+};
+
 export type CreateTaskInput = {
   name: string;
   type: string;
@@ -65,6 +80,8 @@ export type CreateTaskInput = {
   story?: number;
   module?: number;
   deadline?: string;
+  /** 预计开始 YYYY-MM-DD；本环境创建任务时常必填 */
+  estStarted?: string;
 };
 
 export type UpdateTaskInput = {
@@ -97,6 +114,15 @@ export type FinishTaskInput = {
   consumed: number;
   left?: number;
   comment?: string;
+  /** 实际完成日期/时间；本环境完成任务时常必填 */
+  finishedDate?: string;
+  /** 实际开始日期/时间；本环境未 start 直接 finish 时常必填 */
+  realStarted?: string;
+  /**
+   * 本次消耗。若任务已 start 并记过工，finish 再传大额 currentConsumed/consumed 会叠加
+   *（例如 start 记 16 后再 finish 传 16 → 总消耗 32）。
+   */
+  currentConsumed?: number;
 };
 
 export type CloseTaskInput = {
@@ -198,6 +224,10 @@ export class ZenTaoApiClient {
     return this.get(ENDPOINTS.storyById(storyId));
   }
 
+  async createStory(productId: number, payload: CreateStoryInput): Promise<unknown> {
+    return this.post(ENDPOINTS.createStoryByProduct(productId), payload as unknown as Record<string, unknown>);
+  }
+
   async listExecutions(projectId: number, query: QueryInput): Promise<unknown> {
     const path = ENDPOINTS.executionsByProject(projectId);
     return this.get(
@@ -231,7 +261,7 @@ export class ZenTaoApiClient {
   }
 
   async createTask(executionId: number, payload: CreateTaskInput): Promise<unknown> {
-    return this.post(ENDPOINTS.createTaskByExecution(executionId), payload);
+    return this.post(ENDPOINTS.createTaskByExecution(executionId), payload as unknown as Record<string, unknown>);
   }
 
   async updateTask(taskId: number, payload: UpdateTaskInput): Promise<unknown> {
@@ -251,7 +281,7 @@ export class ZenTaoApiClient {
   }
 
   async finishTask(taskId: number, payload: FinishTaskInput): Promise<unknown> {
-    return this.post(ENDPOINTS.finishTaskById(taskId), payload);
+    return this.post(ENDPOINTS.finishTaskById(taskId), payload as unknown as Record<string, unknown>);
   }
 
   async closeTask(taskId: number, payload: CloseTaskInput): Promise<unknown> {
