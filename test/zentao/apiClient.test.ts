@@ -145,7 +145,11 @@ describe("ZenTaoApiClient", () => {
       );
 
       await client.confirmBug(9, { assignedTo: "alice", comment: "处理一下" });
-      await client.resolveBug(9, { resolution: "fixed", comment: "已修复" });
+      await client.resolveBug(9, {
+        resolution: "fixed",
+        resolvedBuild: "trunk",
+        comment: "已修复",
+      });
       await client.closeBug(9, { comment: "已验收" });
       await client.activateBug(9, { assignedTo: "bob", comment: "复测失败" });
 
@@ -157,6 +161,14 @@ describe("ZenTaoApiClient", () => {
         "https://zentao.local/api.php/v1/bugs/9/active",
       ]);
       assert.deepEqual(fetchCalls.map((call) => call.init?.method), ["POST", "POST", "POST", "POST"]);
+      assert.equal(
+        fetchCalls[1]?.init?.body,
+        JSON.stringify({
+          resolution: "fixed",
+          resolvedBuild: "trunk",
+          comment: "已修复",
+        }),
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -202,6 +214,78 @@ describe("ZenTaoApiClient", () => {
         "https://zentao.local/api.php/v1/tasks/7/close",
       ]);
       assert.deepEqual(fetchCalls.map((call) => call.init?.method), ["POST", "PUT", "POST", "POST", "POST", "POST", "POST"]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("posts createStory payload with reviewer array", async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+    globalThis.fetch = (async (url: string | URL | globalThis.Request, init?: RequestInit) => {
+      fetchCalls.push({ url: String(url), init });
+      return new Response(JSON.stringify({ story: { id: 1 } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+
+    try {
+      const client = new ZenTaoApiClient("https://zentao.local", 10_000, {
+        getToken: async () => "token_story",
+      } as never);
+      await client.createStory(77, {
+        title: "MCP story",
+        spec: "spec",
+        reviewer: ["moomesy.liang"],
+        branch: 0,
+      });
+      assert.equal(fetchCalls[0]?.url, "https://zentao.local/api.php/v1/products/77/stories");
+      assert.equal(
+        fetchCalls[0]?.init?.body,
+        JSON.stringify({
+          title: "MCP story",
+          spec: "spec",
+          reviewer: ["moomesy.liang"],
+          branch: 0,
+        }),
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("posts finishTask with finishedDate and currentConsumed", async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+    globalThis.fetch = (async (url: string | URL | globalThis.Request, init?: RequestInit) => {
+      fetchCalls.push({ url: String(url), init });
+      return new Response(JSON.stringify({ task: { id: 1 } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+
+    try {
+      const client = new ZenTaoApiClient("https://zentao.local", 10_000, {
+        getToken: async () => "token_finish",
+      } as never);
+      await client.finishTask(36483, {
+        consumed: 16,
+        left: 0,
+        finishedDate: "2026-08-13",
+        currentConsumed: 16,
+      });
+      assert.equal(fetchCalls[0]?.url, "https://zentao.local/api.php/v1/tasks/36483/finish");
+      assert.equal(
+        fetchCalls[0]?.init?.body,
+        JSON.stringify({
+          consumed: 16,
+          left: 0,
+          finishedDate: "2026-08-13",
+          currentConsumed: 16,
+        }),
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }

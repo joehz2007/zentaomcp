@@ -3,11 +3,14 @@ import type { ZenTaoApiClient } from "../zentao/apiClient.js";
 import type { ZenTaoSessionApiClient } from "../zentao/sessionApiClient.js";
 import { createAttachmentTools } from "../tools/attachments.js";
 import { createBugTools } from "../tools/bugs.js";
+import { createBuildTools } from "../tools/builds.js";
 import { createExecutionTools } from "../tools/executions.js";
 import { createHealthCheckTool } from "../tools/healthCheck.js";
+import { createProductTools } from "../tools/products.js";
 import { createProjectTools } from "../tools/projects.js";
 import { createStoryTools } from "../tools/stories.js";
 import { createTaskTools } from "../tools/tasks.js";
+import { createUserTools } from "../tools/users.js";
 import type { StandardResult } from "../domain/types.js";
 
 export interface ToolContext {
@@ -31,20 +34,29 @@ export class ToolRegistry {
   constructor(context: ToolContext) {
     const readOnlyTaskTools = new Set(["zentao_list_tasks", "zentao_get_task"]);
     const readOnlyBugTools = new Set(["zentao_list_bugs", "zentao_get_bug"]);
+    const readOnlyStoryTools = new Set(["zentao_list_stories", "zentao_get_story"]);
     const taskTools = createTaskTools(context).filter(
       (tool) => context.config.enableWriteTools || readOnlyTaskTools.has(tool.name),
     );
     const bugTools = createBugTools(context).filter(
       (tool) => context.config.enableWriteTools || readOnlyBugTools.has(tool.name),
     );
+    const storyTools = createStoryTools(context).filter(
+      (tool) => context.config.enableWriteTools || readOnlyStoryTools.has(tool.name),
+    );
     const attachmentTools = context.config.enableAttachmentTools
-      ? createAttachmentTools(context)
+      ? createAttachmentTools(context, {
+          enableUpload: context.config.enableWriteTools,
+        })
       : [];
     const definitions = [
       createHealthCheckTool(context),
+      ...createProductTools(context),
       ...createProjectTools(context),
+      ...createUserTools(context),
       ...createExecutionTools(context),
-      ...createStoryTools(context),
+      ...createBuildTools(context),
+      ...storyTools,
       ...attachmentTools,
       ...taskTools,
       ...bugTools,

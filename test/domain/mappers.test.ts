@@ -35,6 +35,13 @@ describe("domain mappers", () => {
         openedBy: { account: "bob", realname: "鲍勃" },
         assignedTo: { realname: "卡罗尔" },
         resolvedBy: { id: 77 },
+        product: 12,
+        project: { id: 34 },
+        module: 5,
+        type: "codeerror",
+        resolution: "fixed",
+        resolvedBuild: { name: "trunk" },
+        steps: "<p>reproduce</p>",
       },
     };
 
@@ -48,6 +55,13 @@ describe("domain mappers", () => {
       openedBy: "bob",
       assignedTo: "卡罗尔",
       resolvedBy: "77",
+      productId: 12,
+      projectId: 34,
+      moduleId: 5,
+      type: "codeerror",
+      resolution: "fixed",
+      resolvedBuild: "trunk",
+      steps: "<p>reproduce</p>",
     });
   });
 

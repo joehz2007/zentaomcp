@@ -122,7 +122,8 @@ function createListBugsTool(context: ToolContext): ToolDefinition {
 function createGetBugTool(context: ToolContext): ToolDefinition {
   return {
     name: "zentao_get_bug",
-    description: "按 Bug ID 获取 Bug 详情",
+    description:
+      "按 Bug ID 获取 Bug 详情；data.raw.actions[] 包含备注/历史动作，actions[].comment 常可用于提取 MR/补充说明",
     inputSchema: {
       type: "object",
       properties: {
@@ -331,6 +332,10 @@ function createResolveBugTool(context: ToolContext): ToolDefinition {
           type: "string",
           enum: ["fixed", "bydesign", "duplicate", "external", "notrepro", "postponed", "willnotfix"],
         },
+        resolvedBuild: {
+          type: "string",
+          description: "解决版本，如 trunk 或禅道版本/构建名称",
+        },
         comment: { type: "string" },
         duplicateBug: { type: "integer", minimum: 1 },
         assignedTo: { type: "string" },
@@ -357,6 +362,8 @@ function createResolveBugTool(context: ToolContext): ToolDefinition {
         if (!resolution) throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 resolution 不能为空");
 
         const payload: ResolveBugInput = { resolution };
+        const resolvedBuild = readString(args, "resolvedBuild");
+        if (resolvedBuild) payload.resolvedBuild = resolvedBuild;
         const comment = readString(args, "comment");
         if (comment) payload.comment = comment;
         const duplicateBug = readPositiveInt(args, "duplicateBug", false, 0);

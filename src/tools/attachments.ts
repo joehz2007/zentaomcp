@@ -1,11 +1,16 @@
 import { ZenTaoApiError } from "../domain/errors.js";
 import { errResult, okResult } from "../infra/result.js";
 import { ENDPOINTS } from "../zentao/endpoints.js";
+import {
+  buildStoryEditFormFields,
+  buildTaskEditFormFields,
+} from "../zentao/editFormFields.js";
 import type { ToolContext, ToolDefinition } from "../server/toolRegistry.js";
 import {
   asRecord,
   authInputSchemaProperties,
   readPositiveInt,
+  readString,
 } from "./common.js";
 
 interface ZenTaoAttachment {
@@ -18,7 +23,7 @@ interface ZenTaoAttachment {
 }
 
 interface AttachmentTarget {
-  idField: "storyId" | "taskId";
+  idField: "storyId" | "taskId" | "bugId";
   idLabel: string;
   detailKeys: string[];
   listToolName: string;
@@ -62,13 +67,37 @@ const taskAttachmentTarget: AttachmentTarget = {
   loadPayload: (apiClient, taskId) => apiClient.getTask(taskId),
 };
 
-export function createAttachmentTools(context: ToolContext): ToolDefinition[] {
-  return [
+const bugAttachmentTarget: AttachmentTarget = {
+  idField: "bugId",
+  idLabel: "Bug",
+  detailKeys: ["bug"],
+  listToolName: "zentao_list_bug_attachments",
+  listDescription: "按 Bug ID 查询附件列表（会话下载前置步骤）",
+  listRequestPrefix: "bug_attachments",
+  listErrorMessage: "查询 Bug 附件失败",
+  downloadToolName: "zentao_download_bug_attachment",
+  downloadDescription: "下载 Bug 附件（二进制内容会以 base64 返回）",
+  downloadRequestPrefix: "bug_attachment_download",
+  downloadErrorMessage: "下载 Bug 附件失败",
+  loadPayload: (apiClient, bugId) => apiClient.getBug(bugId),
+};
+
+export function createAttachmentTools(
+  context: ToolContext,
+  options?: { enableUpload?: boolean },
+): ToolDefinition[] {
+  const tools: ToolDefinition[] = [
     createListAttachmentsTool(context, storyAttachmentTarget),
     createListAttachmentsTool(context, taskAttachmentTarget),
+    createListAttachmentsTool(context, bugAttachmentTarget),
     createDownloadAttachmentTool(context, storyAttachmentTarget),
     createDownloadAttachmentTool(context, taskAttachmentTarget),
+    createDownloadAttachmentTool(context, bugAttachmentTarget),
   ];
+  if (options?.enableUpload) {
+    tools.push(createUploadTaskAttachmentTool(context), createUploadStoryAttachmentTool(context));
+  }
+  return tools;
 }
 
 function createListAttachmentsTool(context: ToolContext, target: AttachmentTarget): ToolDefinition {
@@ -179,6 +208,112 @@ function createDownloadAttachmentTool(context: ToolContext, target: AttachmentTa
           return errResult(error.code, error.message, requestId, error.details);
         }
         return errResult("UPSTREAM_ERROR", target.downloadErrorMessage, requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createUploadTaskAttachmentTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_upload_task_attachment",
+    description:
+      "上传任务附件（会话 task-edit multipart files[]）。不依赖 api.php/v2/files。提交前会 get 任务并回填 name/type/pri/estimate/story/assignedTo 等，避免只传 files 清空字段。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        taskId: { type: "integer", minimum: 1 },
+        filePath: { type: "string", minLength: 1 },
+        comment: { type: "string" },
+      },
+      required: ["taskId", "filePath"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `task_attachment_upload_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const sessionClient = context.getSessionClientForArgs(args);
+        const taskId = readPositiveInt(args, "taskId", true);
+        const filePath = readString(args, "filePath");
+        if (!filePath) throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 filePath 不能为空");
+        const detail = await apiClient.getTask(taskId);
+        const fields = buildTaskEditFormFields(detail);
+        const comment = readString(args, "comment");
+        if (comment) fields.comment = comment;
+        const result = await sessionClient.postMultipart(
+          ENDPOINTS.taskEditById(taskId),
+          fields,
+          { filePath },
+        );
+        return okResult(
+          {
+            taskId,
+            filePath,
+            preservedFields: fields,
+            session: result.payload,
+          },
+          requestId,
+        );
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "上传任务附件失败", requestId, { reason: String(error) });
+      }
+    },
+  };
+}
+
+function createUploadStoryAttachmentTool(context: ToolContext): ToolDefinition {
+  return {
+    name: "zentao_upload_story_attachment",
+    description:
+      "上传需求附件（会话 story-edit multipart files[]）。不依赖 api.php/v2/files。提交前会 get 需求并回填 title/spec/pri 等关键字段；可选 comment。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...authInputSchemaProperties,
+        storyId: { type: "integer", minimum: 1 },
+        filePath: { type: "string", minLength: 1 },
+        comment: { type: "string" },
+      },
+      required: ["storyId", "filePath"],
+      additionalProperties: false,
+    },
+    handler: async (rawArgs) => {
+      const requestId = `story_attachment_upload_${Date.now()}`;
+      const args = asRecord(rawArgs);
+      try {
+        const apiClient = context.getApiClientForArgs(args);
+        const sessionClient = context.getSessionClientForArgs(args);
+        const storyId = readPositiveInt(args, "storyId", true);
+        const filePath = readString(args, "filePath");
+        if (!filePath) throw new ZenTaoApiError("INVALID_ARGUMENT", "参数 filePath 不能为空");
+        const detail = await apiClient.getStory(storyId);
+        const fields = buildStoryEditFormFields(detail);
+        const comment = readString(args, "comment");
+        if (comment) fields.comment = comment;
+        const result = await sessionClient.postMultipart(
+          ENDPOINTS.storyEditById(storyId),
+          fields,
+          { filePath },
+        );
+        return okResult(
+          {
+            storyId,
+            filePath,
+            preservedFields: fields,
+            session: result.payload,
+          },
+          requestId,
+        );
+      } catch (error) {
+        if (error instanceof ZenTaoApiError) {
+          return errResult(error.code, error.message, requestId, error.details);
+        }
+        return errResult("UPSTREAM_ERROR", "上传需求附件失败", requestId, { reason: String(error) });
       }
     },
   };

@@ -1,11 +1,14 @@
 import type {
   StandardBug,
+  StandardBuild,
   StandardDetailResult,
   StandardExecution,
   StandardListResult,
+  StandardProduct,
   StandardProject,
   StandardStory,
   StandardTask,
+  StandardUser,
 } from "./models.js";
 
 type AnyRecord = Record<string, unknown>;
@@ -145,6 +148,45 @@ function extractDetailData(payload: unknown, preferredKeys: string[]): AnyRecord
   return record;
 }
 
+function pickRelationId(source: AnyRecord, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    const asNum = asNumber(value);
+    if (asNum !== undefined) return asNum;
+    const objectValue = asObject(value);
+    if (objectValue) {
+      const id = pickNumber(objectValue, "id");
+      if (id !== undefined) return id;
+    }
+  }
+  return undefined;
+}
+
+function pickBuildName(source: AnyRecord, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    const text = asString(value);
+    if (text !== undefined) return text;
+    const objectValue = asObject(value);
+    if (objectValue) {
+      const name = pickString(objectValue, "name", "title", "id");
+      if (name !== undefined) return name;
+    }
+    if (Array.isArray(value)) {
+      const names = value
+        .map((item) => {
+          const textItem = asString(item);
+          if (textItem) return textItem;
+          const objectItem = asObject(item);
+          return objectItem ? pickString(objectItem, "name", "title", "id") : undefined;
+        })
+        .filter(Boolean) as string[];
+      if (names.length > 0) return names.join(",");
+    }
+  }
+  return undefined;
+}
+
 function mapProject(source: AnyRecord): StandardProject {
   return {
     id: asId(source.id),
@@ -153,6 +195,43 @@ function mapProject(source: AnyRecord): StandardProject {
     startDate: pickString(source, "begin", "start", "startDate"),
     endDate: pickString(source, "end", "endDate"),
     owner: pickUserText(source, "PM", "pm", "owner"),
+  };
+}
+
+function mapProduct(source: AnyRecord): StandardProduct {
+  return {
+    id: asId(source.id),
+    name: pickString(source, "name", "title") ?? "",
+    code: pickString(source, "code"),
+    status: pickString(source, "status"),
+    type: pickString(source, "type"),
+    owner: pickUserText(source, "PO", "po", "owner"),
+    qd: pickUserText(source, "QD", "qd"),
+    rd: pickUserText(source, "RD", "rd"),
+  };
+}
+
+function mapUser(source: AnyRecord): StandardUser {
+  return {
+    id: asId(source.id),
+    account: pickString(source, "account", "username") ?? "",
+    realname: pickString(source, "realname", "name"),
+    role: pickString(source, "role"),
+    email: pickString(source, "email"),
+    dept: pickNumber(source, "dept"),
+  };
+}
+
+function mapBuild(source: AnyRecord): StandardBuild {
+  return {
+    id: asId(source.id),
+    name: pickString(source, "name", "title") ?? "",
+    date: pickString(source, "date"),
+    builder: pickUserText(source, "builder"),
+    productId: pickRelationId(source, "product", "productId"),
+    projectId: pickRelationId(source, "project", "projectId"),
+    executionId: pickRelationId(source, "execution", "executionId", "executionID"),
+    desc: pickString(source, "desc", "description"),
   };
 }
 
@@ -191,6 +270,13 @@ function mapBug(source: AnyRecord): StandardBug {
     openedBy: pickUserText(source, "openedBy"),
     assignedTo: pickUserText(source, "assignedTo"),
     resolvedBy: pickUserText(source, "resolvedBy"),
+    productId: pickRelationId(source, "product", "productId"),
+    projectId: pickRelationId(source, "project", "projectId"),
+    moduleId: pickRelationId(source, "module", "moduleId"),
+    type: pickString(source, "type"),
+    resolution: pickString(source, "resolution"),
+    resolvedBuild: pickBuildName(source, "resolvedBuild", "resolvedBuilds"),
+    steps: pickString(source, "steps"),
   };
 }
 
@@ -214,6 +300,26 @@ export function mapProjectList(payload: unknown): StandardListResult<StandardPro
 export function mapProjectDetail(payload: unknown): StandardDetailResult<StandardProject> {
   const detail = extractDetailData(payload, ["project", "projects"]);
   return { item: detail ? mapProject(detail) : null, raw: payload };
+}
+
+export function mapProductList(payload: unknown): StandardListResult<StandardProduct> {
+  const items = extractListData(payload, ["products", "productList"]).map(mapProduct);
+  return { items, total: extractTotal(payload) ?? items.length, raw: payload };
+}
+
+export function mapProductDetail(payload: unknown): StandardDetailResult<StandardProduct> {
+  const detail = extractDetailData(payload, ["product", "products"]);
+  return { item: detail ? mapProduct(detail) : null, raw: payload };
+}
+
+export function mapUserList(payload: unknown): StandardListResult<StandardUser> {
+  const items = extractListData(payload, ["users", "userList"]).map(mapUser);
+  return { items, total: extractTotal(payload) ?? items.length, raw: payload };
+}
+
+export function mapBuildList(payload: unknown): StandardListResult<StandardBuild> {
+  const items = extractListData(payload, ["builds", "buildList"]).map(mapBuild);
+  return { items, total: extractTotal(payload) ?? items.length, raw: payload };
 }
 
 export function mapStoryList(payload: unknown): StandardListResult<StandardStory> {

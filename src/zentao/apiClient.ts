@@ -8,6 +8,7 @@ type QueryInput = PaginationInput & {
   keyword?: string;
   assignedTo?: string;
   severity?: string;
+  browse?: string;
 };
 
 export type CreateBugInput = {
@@ -47,10 +48,26 @@ export type ActivateBugInput = {
 
 export type ResolveBugInput = {
   resolution: "fixed" | "bydesign" | "duplicate" | "external" | "notrepro" | "postponed" | "willnotfix";
+  resolvedBuild?: string;
   comment?: string;
   duplicateBug?: number;
   assignedTo?: string;
   mailto?: string[];
+};
+
+export type CreateStoryInput = {
+  title: string;
+  spec: string;
+  reviewer: string[];
+  verify?: string;
+  pri?: number;
+  category?: string;
+  source?: string;
+  sourceNote?: string;
+  keywords?: string;
+  module?: number;
+  branch?: number;
+  assignedTo?: string;
 };
 
 export type CreateTaskInput = {
@@ -63,6 +80,8 @@ export type CreateTaskInput = {
   story?: number;
   module?: number;
   deadline?: string;
+  /** 预计开始 YYYY-MM-DD；本环境创建任务时常必填 */
+  estStarted?: string;
 };
 
 export type UpdateTaskInput = {
@@ -95,6 +114,15 @@ export type FinishTaskInput = {
   consumed: number;
   left?: number;
   comment?: string;
+  /** 实际完成日期/时间；本环境完成任务时常必填 */
+  finishedDate?: string;
+  /** 实际开始日期/时间；本环境未 start 直接 finish 时常必填 */
+  realStarted?: string;
+  /**
+   * 本次消耗。若任务已 start 并记过工，finish 再传大额 currentConsumed/consumed 会叠加
+   *（例如 start 记 16 后再 finish 传 16 → 总消耗 32）。
+   */
+  currentConsumed?: number;
 };
 
 export type CloseTaskInput = {
@@ -128,6 +156,29 @@ export class ZenTaoApiClient {
     };
   }
 
+  async listProducts(query: QueryInput): Promise<unknown> {
+    const path = withQuery(ENDPOINTS.products, {
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+      q: query.keyword,
+    });
+    return this.get(path);
+  }
+
+  async getProduct(productId: number): Promise<unknown> {
+    return this.get(ENDPOINTS.productById(productId));
+  }
+
+  async listUsers(query: QueryInput): Promise<unknown> {
+    const path = withQuery(ENDPOINTS.users, {
+      page: query.page,
+      limit: query.limit,
+      browse: query.browse,
+    });
+    return this.get(path);
+  }
+
   async listProjects(query: QueryInput): Promise<unknown> {
     const path = withQuery(ENDPOINTS.projects, {
       page: query.page,
@@ -140,6 +191,17 @@ export class ZenTaoApiClient {
 
   async getProject(projectId: number): Promise<unknown> {
     return this.get(ENDPOINTS.projectById(projectId));
+  }
+
+  async listBuilds(executionId: number, query: QueryInput): Promise<unknown> {
+    const path = ENDPOINTS.buildsByExecution(executionId);
+    return this.get(
+      withQuery(path, {
+        page: query.page,
+        limit: query.limit,
+        q: query.keyword,
+      }),
+    );
   }
 
   async listStories(scope: "product" | "project", scopeId: number, query: QueryInput): Promise<unknown> {
@@ -160,6 +222,10 @@ export class ZenTaoApiClient {
 
   async getStory(storyId: number): Promise<unknown> {
     return this.get(ENDPOINTS.storyById(storyId));
+  }
+
+  async createStory(productId: number, payload: CreateStoryInput): Promise<unknown> {
+    return this.post(ENDPOINTS.createStoryByProduct(productId), payload as unknown as Record<string, unknown>);
   }
 
   async listExecutions(projectId: number, query: QueryInput): Promise<unknown> {
@@ -195,7 +261,7 @@ export class ZenTaoApiClient {
   }
 
   async createTask(executionId: number, payload: CreateTaskInput): Promise<unknown> {
-    return this.post(ENDPOINTS.createTaskByExecution(executionId), payload);
+    return this.post(ENDPOINTS.createTaskByExecution(executionId), payload as unknown as Record<string, unknown>);
   }
 
   async updateTask(taskId: number, payload: UpdateTaskInput): Promise<unknown> {
@@ -215,7 +281,7 @@ export class ZenTaoApiClient {
   }
 
   async finishTask(taskId: number, payload: FinishTaskInput): Promise<unknown> {
-    return this.post(ENDPOINTS.finishTaskById(taskId), payload);
+    return this.post(ENDPOINTS.finishTaskById(taskId), payload as unknown as Record<string, unknown>);
   }
 
   async closeTask(taskId: number, payload: CloseTaskInput): Promise<unknown> {

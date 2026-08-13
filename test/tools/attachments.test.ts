@@ -40,6 +40,22 @@ function buildContext(overrides?: {
         },
       },
     }),
+    getBug: async () => ({
+      data: {
+        bug: {
+          id: 66,
+          files: [
+            {
+              id: 903,
+              title: "repro.png",
+              extension: "png",
+              size: 512,
+              downloadUrl: "/file-download-903.html",
+            },
+          ],
+        },
+      },
+    }),
     ...(overrides?.apiClient ?? {}),
   } as unknown as ToolContext["apiClient"];
 
@@ -182,6 +198,51 @@ describe("attachments tool", () => {
     assert.equal(payload.size, 3);
   });
 
+  it("lists bug attachments", async () => {
+    const context = buildContext();
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_list_bug_attachments");
+    assert.ok(tool);
+
+    const result = await tool.handler({ bugId: 66 });
+    assert.equal(result.ok, true);
+    const payload = result.data as { items: Array<{ id: number; title: string; extension?: string }> };
+    assert.equal(payload.items.length, 1);
+    assert.deepEqual(payload.items[0], {
+      id: 903,
+      title: "repro.png",
+      extension: "png",
+      size: 512,
+      downloadPath: "/file-download-903.html",
+    });
+  });
+
+  it("downloads bug attachment as base64", async () => {
+    let capturedPath = "";
+    const context = buildContext({
+      sessionClient: {
+        downloadBinary: async (path: string) => {
+          capturedPath = path;
+          return {
+            sourcePath: path,
+            content: new Uint8Array([7, 8]),
+            contentType: "image/png",
+            filename: "repro.png",
+          };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context).find((item) => item.name === "zentao_download_bug_attachment");
+    assert.ok(tool);
+
+    const result = await tool.handler({ bugId: 66, fileId: 903 });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/file-download-903.html");
+    const payload = result.data as { bugId: number; filename: string; contentBase64: string };
+    assert.equal(payload.bugId, 66);
+    assert.equal(payload.filename, "repro.png");
+    assert.equal(payload.contentBase64, "Bwg=");
+  });
+
   it("keeps title extension when session filename is missing", async () => {
     const context = buildContext({
       apiClient: {
@@ -258,5 +319,94 @@ describe("attachments tool", () => {
     const result = await tool.handler({ taskId: 88, fileId: 999 });
     assert.equal(result.ok, false);
     assert.equal(result.error?.code, "INVALID_ARGUMENT");
+  });
+
+  it("uploads task attachment with preserved edit fields", async () => {
+    let capturedPath = "";
+    let capturedFields: Record<string, unknown> | undefined;
+    let capturedFilePath = "";
+    const context = buildContext({
+      apiClient: {
+        getTask: async () => ({
+          task: {
+            id: 88,
+            name: "开发任务",
+            type: "devel",
+            pri: 2,
+            estimate: 16,
+            story: 7453,
+            assignedTo: { account: "moomesy.liang" },
+            desc: "keep me",
+          },
+        }),
+      },
+      sessionClient: {
+        postMultipart: async (path: string, fields: Record<string, unknown>, file: { filePath: string }) => {
+          capturedPath = path;
+          capturedFields = fields;
+          capturedFilePath = file.filePath;
+          return { path, status: 200, payload: { result: "success" } };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context, { enableUpload: true }).find(
+      (item) => item.name === "zentao_upload_task_attachment",
+    );
+    assert.ok(tool);
+
+    const result = await tool.handler({
+      taskId: 88,
+      filePath: "/tmp/ai-efficiency-test.zip",
+      comment: "test 包",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/task-edit-88.json");
+    assert.equal(capturedFilePath, "/tmp/ai-efficiency-test.zip");
+    assert.equal(capturedFields?.name, "开发任务");
+    assert.equal(capturedFields?.estimate, 16);
+    assert.equal(capturedFields?.story, 7453);
+    assert.equal(capturedFields?.assignedTo, "moomesy.liang");
+    assert.equal(capturedFields?.comment, "test 包");
+  });
+
+  it("uploads story attachment with preserved edit fields", async () => {
+    let capturedPath = "";
+    let capturedFields: Record<string, unknown> | undefined;
+    const context = buildContext({
+      apiClient: {
+        getStory: async () => ({
+          story: {
+            id: 7453,
+            title: "AI提效需求",
+            spec: "keep spec",
+            pri: 2,
+            branch: 0,
+            assignedTo: "moomesy.liang",
+          },
+        }),
+      },
+      sessionClient: {
+        postMultipart: async (path: string, fields: Record<string, unknown>) => {
+          capturedPath = path;
+          capturedFields = fields;
+          return { path, status: 200, payload: { result: "success" } };
+        },
+      },
+    });
+    const tool = createAttachmentTools(context, { enableUpload: true }).find(
+      (item) => item.name === "zentao_upload_story_attachment",
+    );
+    assert.ok(tool);
+
+    const result = await tool.handler({
+      storyId: 7453,
+      filePath: "/tmp/ai-efficiency-test.zip",
+      comment: "test 包说明",
+    });
+    assert.equal(result.ok, true);
+    assert.equal(capturedPath, "/story-edit-7453.json");
+    assert.equal(capturedFields?.title, "AI提效需求");
+    assert.equal(capturedFields?.spec, "keep spec");
+    assert.equal(capturedFields?.comment, "test 包说明");
   });
 });
